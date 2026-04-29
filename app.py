@@ -12,6 +12,13 @@ from functools import wraps
 
 app = Flask(__name__)
 app.config.from_object(Config)
+
+# ── Admin credentials ──────────────────
+ADMIN_USERNAME = app.config.get('ADMIN_USERNAME', 'admin')
+ADMIN_PASSWORD = app.config.get('ADMIN_PASSWORD', 'lumiere@2025')
+# ──────────────────────────────────────
+
+
 db.init_app(app)
 
 # ── CSRF protection (covers every POST form automatically) ──
