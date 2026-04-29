@@ -340,7 +340,7 @@ def my_bookings():
 # ─────────────────────────────────────────────
 # ADMIN PANEL
 # ─────────────────────────────────────────────
-@app.route('/admin', methods=['GET', 'POST'])
+@app.route('/lumiere-admin', methods=['GET', 'POST'])
 def admin_login():
     if session.get('admin_logged_in'):
         return redirect(url_for('admin_dashboard'))
