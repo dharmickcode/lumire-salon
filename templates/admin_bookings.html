@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bookings – Lumière Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --royal-purple:    #8a63b4;
+      --dark-purple:     #4a2d6f;
+      --pastel-lavender: #ede0f7;
+      --text-light:      #9c8aac;
+      --text-dark:       #2d2035;
+      --sidebar-w:       240px;
+    }
+
+    body { font-family: 'Quicksand', sans-serif; background: #f5f2fa; color: var(--text-dark); min-height: 100vh; display: flex; }
+    a { text-decoration: none; color: inherit; }
+
+    /* ===== SIDEBAR ===== */
+    .sidebar { width: var(--sidebar-w); min-height: 100vh; background: var(--dark-purple); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; z-index: 200; box-shadow: 4px 0 24px rgba(74,45,111,0.18); transition: transform 0.35s cubic-bezier(0.22,1,0.36,1); }
+    .sidebar-logo { padding: 28px 24px 20px; border-bottom: 1px solid rgba(255,255,255,0.07); }
+    .sidebar-logo-name { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; font-weight: 300; letter-spacing: 0.2em; color: #fff; }
+    .sidebar-logo-name em { font-style: italic; color: rgba(200,165,235,0.9); }
+    .sidebar-logo-tag { font-size: 0.58rem; letter-spacing: 3px; text-transform: uppercase; color: rgba(255,255,255,0.3); margin-top: 3px; }
+    .sidebar-badge { display: inline-block; margin-top: 8px; font-size: 0.6rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; background: rgba(138,99,180,0.35); color: rgba(200,165,235,0.9); padding: 3px 8px; border-radius: 50px; border: 1px solid rgba(138,99,180,0.4); }
+    .sidebar-nav { flex: 1; padding: 20px 0; }
+    .sidebar-section { font-size: 0.6rem; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: rgba(255,255,255,0.2); padding: 14px 24px 8px; }
+    .sidebar-link { display: flex; align-items: center; gap: 12px; padding: 11px 24px; font-size: 0.83rem; font-weight: 600; color: rgba(255,255,255,0.5); transition: all 0.25s; border-left: 3px solid transparent; }
+    .sidebar-link svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.8; flex-shrink: 0; }
+    .sidebar-link:hover { color: #fff; background: rgba(255,255,255,0.05); }
+    .sidebar-link.active { color: #fff; background: rgba(138,99,180,0.2); border-left-color: var(--royal-purple); }
+    .sidebar-footer { padding: 20px 24px; border-top: 1px solid rgba(255,255,255,0.07); }
+    .logout-btn { display: flex; align-items: center; gap: 10px; font-size: 0.8rem; font-weight: 600; color: rgba(255,255,255,0.4); transition: color 0.2s; cursor: pointer; background: none; border: none; font-family: 'Quicksand', sans-serif; width: 100%; padding: 0; }
+    .logout-btn svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; }
+    .logout-btn:hover { color: #ff8a8a; }
+
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(74,45,111,0.45); backdrop-filter: blur(3px); z-index: 150; }
+    .sidebar-overlay.open { display: block; }
+
+    /* ===== MOBILE TOPBAR ===== */
+    .mobile-topbar { display: none; position: fixed; top: 0; left: 0; right: 0; height: 60px; background: var(--dark-purple); z-index: 100; align-items: center; justify-content: space-between; padding: 0 18px; box-shadow: 0 2px 16px rgba(74,45,111,0.25); }
+    .mobile-logo { font-family: 'Cormorant Garamond', serif; font-size: 1.15rem; font-weight: 300; letter-spacing: 0.2em; color: #fff; }
+    .mobile-logo em { font-style: italic; color: rgba(200,165,235,0.9); }
+    .mobile-menu-btn { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-direction: column; gap: 4px; padding: 0; }
+    .mobile-menu-btn span { display: block; width: 18px; height: 2px; background: #fff; border-radius: 2px; transition: all 0.3s ease; }
+    .mobile-menu-btn.open span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+    .mobile-menu-btn.open span:nth-child(2) { opacity: 0; }
+    .mobile-menu-btn.open span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+
+    /* ===== MAIN ===== */
+    .main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+    .topbar { background: #fff; border-bottom: 1px solid rgba(138,99,180,0.1); padding: 0 36px; height: 64px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
+    .topbar-title { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 400; color: var(--dark-purple); }
+    .topbar-title em { font-style: italic; color: var(--royal-purple); }
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+    .admin-avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, var(--royal-purple), var(--dark-purple)); display: flex; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 700; color: #fff; }
+    .admin-name { font-size: 0.82rem; font-weight: 600; color: var(--text-light); }
+
+    .page-content { padding: 36px; flex: 1; }
+
+    .alert { padding: 12px 16px; border-radius: 10px; margin-bottom: 24px; font-size: 0.88rem; font-weight: 500; }
+    .alert-success { background: #f0faf4; color: #1e7e4a; border: 1px solid #b7e4c7; }
+    .alert-error, .alert-danger { background: #fdf0f0; color: #c0392b; border: 1px solid #f5c6c6; }
+
+    /* ===== STATS ===== */
+    .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 14px; margin-bottom: 26px; }
+    .stat-card { background: #fff; border: 1px solid rgba(138,99,180,0.1); border-radius: 16px; padding: 16px 18px; position: relative; overflow: hidden; }
+    .stat-card::after { content: ''; position: absolute; top: -30px; right: -30px; width: 80px; height: 80px; border-radius: 50%; background: radial-gradient(circle, rgba(200,160,230,0.15), transparent 70%); }
+    .stat-icon { font-size: 1rem; margin-bottom: 7px; }
+    .stat-val { font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; font-weight: 600; color: var(--dark-purple); line-height: 1; margin-bottom: 3px; }
+    .stat-label { font-size: 0.65rem; font-weight: 600; color: var(--text-light); text-transform: uppercase; letter-spacing: 1px; }
+
+    /* ===== FILTER ===== */
+    .filter-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+    .filter-btn { font-family: 'Quicksand', sans-serif; font-size: 0.72rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 7px 16px; border-radius: 50px; border: 1.5px solid rgba(138,99,180,0.2); background: #fff; color: var(--text-light); cursor: pointer; transition: all 0.25s; }
+    .filter-btn:hover, .filter-btn.active { background: var(--royal-purple); border-color: var(--royal-purple); color: #fff; }
+
+    /* ===== DESKTOP TABLE ===== */
+    .table-wrap { background: #fff; border: 1px solid rgba(138,99,180,0.1); border-radius: 18px; overflow: hidden; }
+    .table-toolbar { padding: 14px 20px; border-bottom: 1px solid rgba(138,99,180,0.07); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+    .table-count { font-size: 0.8rem; color: var(--text-light); font-weight: 600; }
+    .table-count strong { color: var(--dark-purple); }
+    table { width: 100%; border-collapse: collapse; }
+    thead th { background: #faf8fd; font-size: 0.64rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--text-light); padding: 12px 16px; text-align: left; border-bottom: 1px solid rgba(138,99,180,0.08); }
+    tbody tr { border-bottom: 1px solid rgba(138,99,180,0.06); transition: background 0.2s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: rgba(138,99,180,0.03); }
+    tbody td { padding: 13px 16px; font-size: 0.85rem; color: var(--text-dark); vertical-align: middle; }
+    .td-id { font-family: 'Cormorant Garamond', serif; font-size: 1rem; font-weight: 600; color: var(--royal-purple); }
+    .td-name { font-weight: 600; color: var(--dark-purple); }
+    .td-phone { color: var(--text-light); font-size: 0.8rem; }
+    .service-dot { width: 7px; height: 7px; border-radius: 50%; background: linear-gradient(135deg, var(--royal-purple), var(--dark-purple)); display: inline-block; margin-right: 6px; }
+    .td-datetime { font-size: 0.8rem; color: var(--text-light); line-height: 1.5; }
+    .td-datetime strong { color: var(--text-dark); font-size: 0.84rem; }
+
+    .badge { display: inline-block; padding: 4px 11px; border-radius: 50px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
+    .badge-pending   { background: #fff8e1; color: #f59e0b; border: 1px solid #fde68a; }
+    .badge-confirmed { background: #f0faf4; color: #16a34a; border: 1px solid #bbf7d0; }
+    .badge-completed { background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; }
+    .badge-cancelled { background: #fdf0f0; color: #dc2626; border: 1px solid #fecaca; }
+
+    .status-form { display: flex; align-items: center; gap: 7px; }
+    .status-select { font-family: 'Quicksand', sans-serif; font-size: 0.76rem; font-weight: 600; padding: 7px 10px; border: 1.5px solid rgba(138,99,180,0.18); border-radius: 8px; background: #faf8fd; color: var(--text-dark); outline: none; cursor: pointer; transition: border-color 0.2s; }
+    .status-select:focus { border-color: var(--royal-purple); }
+    .btn-save { font-family: 'Quicksand', sans-serif; font-size: 0.7rem; font-weight: 700; padding: 7px 14px; border-radius: 8px; background: linear-gradient(135deg, var(--royal-purple), var(--dark-purple)); color: #fff; border: none; cursor: pointer; transition: all 0.25s; box-shadow: 0 2px 8px rgba(138,99,180,0.25); }
+    .btn-save:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(138,99,180,0.35); }
+
+    /* ===== MOBILE BOOKING CARDS ===== */
+    .booking-cards { display: none; flex-direction: column; gap: 12px; padding: 14px; }
+
+    .bmc {
+      background: #faf8fd;
+      border: 1px solid rgba(138,99,180,0.1);
+      border-radius: 14px;
+      padding: 16px 18px;
+      transition: box-shadow 0.2s;
+    }
+
+    .bmc-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; gap: 8px; }
+    .bmc-id { font-family: 'Cormorant Garamond', serif; font-size: 1rem; font-weight: 600; color: var(--royal-purple); }
+    .bmc-name { font-weight: 700; color: var(--dark-purple); font-size: 0.92rem; }
+    .bmc-phone { font-size: 0.78rem; color: var(--text-light); margin-top: 1px; }
+
+    .bmc-details { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+    .bmc-detail-item { font-size: 0.78rem; }
+    .bmc-detail-label { color: var(--text-light); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.65rem; margin-bottom: 2px; }
+    .bmc-detail-val { color: var(--text-dark); font-weight: 600; }
+
+    .bmc-footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+    .bmc-status-form { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+    /* ===== EMPTY ===== */
+    .empty-state { text-align: center; padding: 50px 20px; }
+    .empty-icon { font-size: 2.5rem; margin-bottom: 14px; opacity: 0.4; }
+    .empty-state p { color: var(--text-light); font-size: 0.9rem; }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 900px) {
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); }
+      .main { margin-left: 0; padding-top: 60px; }
+      .mobile-topbar { display: flex; }
+      .topbar { top: 60px; padding: 0 18px; height: 54px; }
+      .topbar-title { font-size: 1.2rem; }
+      .admin-name { display: none; }
+      .page-content { padding: 18px 14px; }
+    }
+
+    @media (max-width: 640px) {
+      /* swap table → cards */
+      .table-wrap > table { display: none; }
+      .booking-cards { display: flex; }
+      .stats-row { grid-template-columns: repeat(5, 1fr); gap: 8px; }
+      .stat-card { padding: 10px 8px; }
+      .stat-val { font-size: 1.4rem; }
+      .stat-label { font-size: 0.58rem; letter-spacing: 0; }
+      .stat-icon { font-size: 0.85rem; }
+      .filter-bar { gap: 6px; }
+      .filter-btn { padding: 6px 12px; font-size: 0.68rem; }
+    }
+
+    @media (max-width: 380px) {
+      .stats-row { grid-template-columns: repeat(3, 1fr); }
+      .bmc-details { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-name">L U M <em>I</em> È R E</div>
+      <div class="sidebar-logo-tag">Luxury Hair Salon</div>
+      <span class="sidebar-badge">Admin Panel</span>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="sidebar-section">Manage</div>
+      <a href="{{ url_for('admin_analytics') }}" class="sidebar-link" onclick="closeSidebar()">
+        <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Analytics
+      </a>
+      <a href="{{ url_for('admin_dashboard') }}" class="sidebar-link" onclick="closeSidebar()">
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>Services
+      </a>
+      <a href="{{ url_for('admin_bookings') }}" class="sidebar-link active" onclick="closeSidebar()">
+        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Bookings
+      </a>
+      <a href="{{ url_for('admin_calendar') }}" class="sidebar-link" onclick="closeSidebar()">
+        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>Calendar
+      </a>
+      <div class="sidebar-section" style="margin-top:16px;">Settings</div>
+      <a href="{{ url_for('admin_settings') }}" class="sidebar-link" onclick="closeSidebar()">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings
+      </a>
+      <div class="sidebar-section" style="margin-top:16px;">Site</div>
+      <a href="{{ url_for('home') }}" class="sidebar-link" target="_blank">
+        <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>View Website
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <form method="POST" action="{{ url_for('admin_logout') }}" style="margin:0">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <button type="submit" class="logout-btn">
+          <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Sign Out
+        </button>
+      </form>
+    </div>
+  </aside>
+
+  <!-- MOBILE TOPBAR -->
+  <div class="mobile-topbar">
+    <div class="mobile-logo">L U M <em>I</em> È R E</div>
+    <button class="mobile-menu-btn" id="menuBtn" onclick="toggleSidebar()">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <header class="topbar">
+      <h1 class="topbar-title">Booking <em>Management</em></h1>
+      <div class="topbar-right">
+        <span class="admin-name">Admin</span>
+        <div class="admin-avatar">AD</div>
+      </div>
+    </header>
+
+    <div class="page-content">
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}{% for category, message in messages %}
+          <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}{% endif %}
+      {% endwith %}
+
+      <!-- Stats -->
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-icon">📋</div><div class="stat-val">{{ bookings|length }}</div><div class="stat-label">Total</div></div>
+        <div class="stat-card"><div class="stat-icon">⏳</div><div class="stat-val">{{ bookings | selectattr('status','equalto','pending') | list | length }}</div><div class="stat-label">Pending</div></div>
+        <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-val">{{ bookings | selectattr('status','equalto','confirmed') | list | length }}</div><div class="stat-label">Confirmed</div></div>
+        <div class="stat-card"><div class="stat-icon">💙</div><div class="stat-val">{{ bookings | selectattr('status','equalto','completed') | list | length }}</div><div class="stat-label">Done</div></div>
+        <div class="stat-card"><div class="stat-icon">❌</div><div class="stat-val">{{ bookings | selectattr('status','equalto','cancelled') | list | length }}</div><div class="stat-label">Cancelled</div></div>
+      </div>
+
+      <!-- Filter -->
+      <div class="filter-bar">
+        <button class="filter-btn active" onclick="filterBookings('all',this)">All</button>
+        <button class="filter-btn" onclick="filterBookings('pending',this)">Pending</button>
+        <button class="filter-btn" onclick="filterBookings('confirmed',this)">Confirmed</button>
+        <button class="filter-btn" onclick="filterBookings('completed',this)">Completed</button>
+        <button class="filter-btn" onclick="filterBookings('cancelled',this)">Cancelled</button>
+      </div>
+
+      <div class="table-wrap">
+        <div class="table-toolbar">
+          <span class="table-count"><strong>{{ bookings|length }}</strong> total bookings</span>
+        </div>
+
+        {% if bookings %}
+
+        <!-- Desktop table -->
+        <table id="bookingsTable">
+          <thead><tr><th>#</th><th>Customer</th><th>Service</th><th>Date &amp; Time</th><th>Booked On</th><th>Status</th><th>Update</th></tr></thead>
+          <tbody>
+            {% for b in bookings %}
+            <tr data-status="{{ b.status }}">
+              <td><span class="td-id">#{{ b.id }}</span></td>
+              <td><div class="td-name">{{ b.name or 'Guest' }}</div><div class="td-phone">{{ b.phone or '—' }}</div></td>
+              <td><span class="service-dot"></span>{{ b.service.name }}</td>
+              <td><div class="td-datetime"><strong>{{ b.date.strftime('%d %b %Y') if b.date else '—' }}</strong><br>{{ b.time.strftime('%I:%M %p') if b.time else '—' }}</div></td>
+              <td class="td-datetime">{{ b.created_at.strftime('%d %b %Y') if b.created_at else '—' }}</td>
+              <td><span class="badge badge-{{ b.status }}">{{ b.status }}</span></td>
+              <td>
+                <form method="POST" action="{{ url_for('admin_update_booking', booking_id=b.id) }}" class="status-form">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                  <select name="status" class="status-select">
+                    <option value="pending"   {% if b.status=='pending'   %}selected{% endif %}>Pending</option>
+                    <option value="confirmed" {% if b.status=='confirmed' %}selected{% endif %}>Confirmed</option>
+                    <option value="completed" {% if b.status=='completed' %}selected{% endif %}>Completed</option>
+                    <option value="cancelled" {% if b.status=='cancelled' %}selected{% endif %}>Cancelled</option>
+                  </select>
+                  <button type="submit" class="btn-save">Save</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        <!-- Mobile cards -->
+        <div class="booking-cards" id="bookingCards">
+          {% for b in bookings %}
+          <div class="bmc" data-status="{{ b.status }}">
+            <div class="bmc-top">
+              <div>
+                <div class="bmc-id">#{{ b.id }}</div>
+                <div class="bmc-name">{{ b.name or 'Guest' }}</div>
+                <div class="bmc-phone">{{ b.phone or '—' }}</div>
+              </div>
+              <span class="badge badge-{{ b.status }}">{{ b.status }}</span>
+            </div>
+
+            <div class="bmc-details">
+              <div class="bmc-detail-item">
+                <div class="bmc-detail-label">Service</div>
+                <div class="bmc-detail-val">{{ b.service.name }}</div>
+              </div>
+              <div class="bmc-detail-item">
+                <div class="bmc-detail-label">Date</div>
+                <div class="bmc-detail-val">{{ b.date.strftime('%d %b %Y') if b.date else '—' }}</div>
+              </div>
+              <div class="bmc-detail-item">
+                <div class="bmc-detail-label">Time</div>
+                <div class="bmc-detail-val">{{ b.time.strftime('%I:%M %p') if b.time else '—' }}</div>
+              </div>
+              <div class="bmc-detail-item">
+                <div class="bmc-detail-label">Booked On</div>
+                <div class="bmc-detail-val">{{ b.created_at.strftime('%d %b %Y') if b.created_at else '—' }}</div>
+              </div>
+            </div>
+
+            <div class="bmc-footer">
+              <form method="POST" action="{{ url_for('admin_update_booking', booking_id=b.id) }}" class="bmc-status-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <select name="status" class="status-select">
+                  <option value="pending"   {% if b.status=='pending'   %}selected{% endif %}>Pending</option>
+                  <option value="confirmed" {% if b.status=='confirmed' %}selected{% endif %}>Confirmed</option>
+                  <option value="completed" {% if b.status=='completed' %}selected{% endif %}>Completed</option>
+                  <option value="cancelled" {% if b.status=='cancelled' %}selected{% endif %}>Cancelled</option>
+                </select>
+                <button type="submit" class="btn-save">Save</button>
+              </form>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+
+        {% else %}
+        <div class="empty-state"><div class="empty-icon">📋</div><p>No bookings yet.</p></div>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    function toggleSidebar() {
+      const s = document.getElementById('sidebar');
+      const o = document.getElementById('sidebarOverlay');
+      const b = document.getElementById('menuBtn');
+      s.classList.toggle('open');
+      o.classList.toggle('open');
+      b.classList.toggle('open');
+    }
+    function closeSidebar() {
+      document.getElementById('sidebar').classList.remove('open');
+      document.getElementById('sidebarOverlay').classList.remove('open');
+      document.getElementById('menuBtn').classList.remove('open');
+    }
+
+    function filterBookings(status, btn) {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      // filter table rows
+      document.querySelectorAll('#bookingsTable tbody tr').forEach(r => {
+        r.style.display = (status === 'all' || r.dataset.status === status) ? '' : 'none';
+      });
+      // filter mobile cards
+      document.querySelectorAll('#bookingCards .bmc').forEach(c => {
+        c.style.display = (status === 'all' || c.dataset.status === status) ? '' : 'none';
+      });
+    }
+  </script>
+</body>
+</html>

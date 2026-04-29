@@ -1,0 +1,524 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<!-- Service data for JS duration calculation -->
+<script id="serviceData" type="application/json">
+[{% for s in services %}{"id":{{ s.id }},"duration":"{{ s.duration or '' }}"}{% if not loop.last %},{% endif %}{% endfor %}]
+</script>
+
+<style>
+  .booking-wrapper {
+    display: flex; justify-content: center; align-items: flex-start;
+    min-height: 70vh; padding: 40px 20px;
+  }
+
+  .booking-card {
+    background: var(--white);
+    padding: 40px 44px;
+    border-radius: 24px;
+    box-shadow: 0 8px 32px rgba(150,123,182,0.12);
+    border: 1px solid var(--pastel-lavender);
+    max-width: 520px; width: 100%;
+  }
+
+  .booking-icon {
+    width: 54px; height: 54px; border-radius: 50%;
+    background: linear-gradient(135deg, rgba(200,165,235,0.2), rgba(255,200,180,0.2));
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 18px; font-size: 1.4rem; position: relative;
+  }
+  .booking-icon::after { content:''; position:absolute; inset:-4px; border-radius:50%; border:1.5px solid rgba(138,99,180,0.15); }
+
+  .booking-card h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2rem; font-weight: 300;
+    color: var(--dark-purple); text-align: center; margin-bottom: 6px;
+  }
+  .booking-card h2 em { font-style: italic; color: var(--royal-purple); }
+  .booking-card > p { color: var(--text-light); margin-bottom: 28px; text-align: center; font-size: 0.88rem; line-height: 1.6; }
+
+  /* ── Alerts ── */
+  .alert {
+    padding: 12px 16px; border-radius: 10px; margin-bottom: 20px;
+    font-size: 0.88rem; font-weight: 500;
+    display: flex; align-items: flex-start; gap: 9px; line-height: 1.5;
+  }
+  .alert svg { width:15px; height:15px; stroke:currentColor; fill:none; stroke-width:2; flex-shrink:0; margin-top:1px; }
+  .alert-error   { background:#fdf0f0; color:#c0392b; border:1px solid #f5c6c6; }
+  .alert-success { background:#f0faf4; color:#1e7e4a; border:1px solid #b7e4c7; }
+
+  /* ── Form ── */
+  .form-group { margin-bottom: 20px; }
+
+  .form-group label {
+    display: flex; align-items: center; gap: 7px;
+    font-size: 0.72rem; font-weight: 700;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--dark-purple); opacity: 0.75; margin-bottom: 8px;
+  }
+
+  .input-wrap { position: relative; }
+  .input-wrap > svg {
+    position:absolute; left:14px; top:50%; transform:translateY(-50%);
+    width:16px; height:16px; stroke:var(--text-light); fill:none;
+    stroke-width:1.8; pointer-events:none; transition:stroke 0.3s;
+  }
+
+  .form-control {
+    width: 100%; padding: 13px 15px 13px 42px;
+    border: 1.5px solid rgba(138,99,180,0.15); border-radius: 12px;
+    font-family: 'Quicksand', sans-serif; font-size: 0.95rem;
+    color: var(--text-dark); background: #faf8fd; outline: none;
+    transition: border-color 0.3s, box-shadow 0.3s; box-sizing: border-box;
+  }
+  .form-control:focus { border-color: var(--royal-purple); box-shadow: 0 0 0 3px rgba(138,99,180,0.1); background: #fff; }
+  .form-control.no-icon { padding-left: 15px; }
+
+  /* ── Services ── */
+  .services-box { border: 1.5px solid rgba(138,99,180,0.15); border-radius: 12px; overflow: hidden; transition: border-color 0.3s, box-shadow 0.3s; }
+  .services-box:focus-within { border-color: var(--royal-purple); box-shadow: 0 0 0 3px rgba(138,99,180,0.1); }
+  .services-scroll { max-height: 210px; overflow-y: auto; padding: 8px 4px; background: #faf8fd; }
+
+  .service-option {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px; border-radius: 8px; cursor: pointer; margin: 2px 4px; transition: background 0.2s;
+  }
+  .service-option:hover { background: rgba(138,99,180,0.06); }
+  .service-option input[type="checkbox"] { accent-color: var(--royal-purple); width: 17px; height: 17px; cursor: pointer; flex-shrink: 0; }
+  .service-option .svc-name { font-size: 0.9rem; color: var(--text-dark); font-weight: 600; flex: 1; }
+  .service-option .svc-meta { display: flex; align-items: center; gap: 10px; }
+  .service-option .svc-duration { font-size: 0.75rem; color: var(--text-light); }
+  .service-option .svc-price { font-family: 'Cormorant Garamond', serif; font-size: 1rem; font-weight: 600; color: var(--royal-purple); white-space: nowrap; }
+
+  /* ── Duration summary pill ── */
+  .duration-summary {
+    display: none;
+    align-items: center; gap: 7px;
+    background: linear-gradient(135deg, rgba(138,99,180,0.08), rgba(200,165,235,0.1));
+    border: 1px solid rgba(138,99,180,0.18);
+    border-radius: 50px; padding: 7px 14px;
+    font-size: 0.78rem; font-weight: 700; color: var(--dark-purple);
+    margin-top: 10px;
+    animation: fadeIn 0.3s ease;
+  }
+  .duration-summary.visible { display: inline-flex; }
+  .duration-summary svg { width: 14px; height: 14px; stroke: var(--royal-purple); fill: none; stroke-width: 2; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+
+  .hint-text { font-size: 0.76rem; color: var(--text-light); margin-top: 7px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+
+  /* ── Date row ── */
+  .form-row { display: flex; gap: 14px; }
+  .form-row .form-group { flex: 1; }
+
+  /* ── Time slot picker ── */
+  .slot-placeholder {
+    border: 1.5px dashed rgba(138,99,180,0.2); border-radius: 12px;
+    padding: 18px; text-align: center;
+    color: var(--text-light); font-size: 0.84rem; line-height: 1.5;
+    background: #faf8fd;
+  }
+  .slot-placeholder svg { width: 20px; height: 20px; stroke: var(--text-light); fill: none; stroke-width: 1.5; margin-bottom: 6px; display: block; margin: 0 auto 6px; }
+
+  .slot-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 7px;
+  }
+
+  .slot-btn {
+    padding: 9px 4px; border-radius: 9px; text-align: center;
+    font-family: 'Quicksand', sans-serif; font-size: 0.78rem; font-weight: 700;
+    cursor: pointer; border: 1.5px solid rgba(138,99,180,0.2);
+    background: #faf8fd; color: var(--dark-purple);
+    transition: all 0.2s; white-space: nowrap;
+  }
+  .slot-btn:hover:not(.slot-booked):not(.slot-selected) {
+    border-color: var(--royal-purple); background: rgba(138,99,180,0.07); color: var(--royal-purple);
+  }
+  .slot-btn.slot-selected {
+    background: linear-gradient(135deg, var(--royal-purple), var(--dark-purple));
+    border-color: transparent; color: #fff;
+    box-shadow: 0 4px 12px rgba(138,99,180,0.3);
+  }
+  .slot-btn.slot-booked {
+    background: #f5f5f5; border-color: #e0e0e0; color: #ccc;
+    cursor: not-allowed; text-decoration: line-through;
+  }
+
+  .slot-loading {
+    grid-column: 1 / -1; text-align: center;
+    padding: 16px; color: var(--text-light); font-size: 0.84rem;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .slot-loading svg { width: 16px; height: 16px; stroke: var(--royal-purple); fill: none; stroke-width: 2; animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .slot-legend { display: flex; align-items: center; gap: 14px; margin-top: 8px; font-size: 0.72rem; color: var(--text-light); }
+  .legend-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .legend-item { display: flex; align-items: center; gap: 5px; }
+
+  /* Hidden time input (submitted with form) */
+  #selectedTimeInput { display: none; }
+
+  /* ── Submit ── */
+  .btn-primary {
+    width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 14px; border-radius: 50px;
+    font-family: 'Quicksand', sans-serif; font-size: 0.85rem; font-weight: 700;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    background: linear-gradient(135deg, var(--royal-purple), var(--dark-purple));
+    color: #fff; border: none; cursor: pointer; transition: all 0.3s;
+    box-shadow: 0 6px 20px rgba(138,99,180,0.28); margin-bottom: 16px;
+  }
+  .btn-primary svg { width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:2; }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(138,99,180,0.38); }
+
+  .check-booking-link {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 0.85rem; font-weight: 600; color: var(--royal-purple); text-decoration: none; transition: gap 0.2s, color 0.2s;
+  }
+  .check-booking-link svg { width:14px; height:14px; stroke:currentColor; fill:none; stroke-width:2.5; transition: transform 0.2s; }
+  .check-booking-link:hover { color: var(--dark-purple); gap: 8px; }
+  .check-booking-link:hover svg { transform: translateX(3px); }
+
+  .booking-actions { text-align: center; }
+
+  @media (max-width: 480px) {
+    .booking-card { padding: 28px 18px; }
+    .slot-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+</style>
+
+<div class="booking-wrapper">
+  <div class="booking-card">
+
+    <div class="booking-icon">✂️</div>
+    <h2>Book <em>Appointment</em></h2>
+    <p>Fill in your details below and we'll confirm your slot.</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">
+            {% if category == 'error' %}
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            {% else %}
+              <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            {% endif %}
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('book_appointment') }}" id="bookingForm">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+      <!-- Name -->
+      <div class="form-group">
+        <label>Full Name</label>
+        <div class="input-wrap">
+          <input type="text" name="name" class="form-control"
+                 placeholder="Enter your full name"
+                 value="{{ request.form.get('name', '') }}" required/>
+          <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+      </div>
+
+      <!-- Phone -->
+      <div class="form-group">
+        <label>Phone Number</label>
+        <div class="input-wrap">
+          <input type="tel" name="phone" class="form-control"
+                 placeholder="Enter your mobile number"
+                 pattern="\d{7,15}" minlength="7" maxlength="15"
+                 title="Digits only, 7–15 characters"
+                 value="{{ request.form.get('phone', '') }}" required/>
+          <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.2 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.37a16 16 0 0 0 6 6l1.73-1.73a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 14.92v2z"/></svg>
+        </div>
+      </div>
+
+      <!-- Services -->
+      <div class="form-group">
+        <label>Select Services</label>
+        <div class="services-box">
+          <div class="services-scroll">
+            {% for service in services %}
+            <label class="service-option">
+              <input type="checkbox" name="service_ids" value="{{ service.id }}"
+                     data-duration="{{ service.duration or '' }}"
+                     onchange="onServiceChange()"/>
+              <span class="svc-name">{{ service.name }}</span>
+              <span class="svc-meta">
+                {% if service.duration %}
+                <span class="svc-duration">⏱ {{ service.duration }}</span>
+                {% endif %}
+                <span class="svc-price">₹{{ service.price }}</span>
+              </span>
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- Duration summary -->
+        <div class="duration-summary" id="durationSummary">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span id="durationText">Estimated total: —</span>
+        </div>
+
+        <p class="hint-text">Select one or more services.</p>
+      </div>
+
+      <!-- Date -->
+      <div class="form-group">
+        <label>
+          <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:var(--royal-purple);fill:none;stroke-width:2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Date
+        </label>
+        <input type="date" name="date" id="dateInput" class="form-control no-icon"
+               value="{{ request.form.get('date', '') }}"
+               min="{{ today }}"
+               onchange="loadSlots(this.value)"
+               required/>
+      </div>
+
+      <!-- Time slot picker -->
+      <div class="form-group">
+        <label>
+          <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:var(--royal-purple);fill:none;stroke-width:2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Available Time Slots
+        </label>
+
+        <!-- Placeholder shown before date is picked -->
+        <div id="slotPlaceholder" class="slot-placeholder">
+          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Pick a date first to see available slots
+        </div>
+
+        <!-- Grid rendered by JS -->
+        <div id="slotGrid" class="slot-grid" style="display:none;"></div>
+
+        <!-- Legend -->
+        <div class="slot-legend" id="slotLegend" style="display:none;">
+          <span class="legend-item"><span class="legend-dot" style="background:linear-gradient(135deg,#8a63b4,#4a2d6f)"></span>Available</span>
+          <span class="legend-item"><span class="legend-dot" style="background:#ddd"></span>Booked</span>
+          <span class="legend-item"><span class="legend-dot" style="background:#8a63b4;box-shadow:0 0 0 2px #fff,0 0 0 3px #8a63b4"></span>Selected</span>
+        </div>
+
+        <!-- Hidden input that carries the selected time to the server -->
+        <input type="text" name="time" id="selectedTimeInput" required/>
+      </div>
+
+      <div class="booking-actions">
+        <button type="submit" class="btn-primary" onclick="return validateForm()">
+          <svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+          Confirm Booking
+        </button>
+        <a href="{{ url_for('check_booking_status') }}" class="check-booking-link">
+          Already booked? Check status
+          <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </a>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+<script>
+  /* ── Service durations ─────────────────────────────────────── */
+  const SERVICE_DATA = JSON.parse(document.getElementById('serviceData').textContent);
+
+  // Parse "45 min", "1 hour", "1.5 hours", "90 minutes" → minutes (int)
+  function parseDurationMins(str) {
+    if (!str) return 0;
+    str = str.toLowerCase().trim();
+    const hourMatch = str.match(/(\d+\.?\d*)\s*h/);
+    const minMatch  = str.match(/(\d+)\s*m/);
+    let total = 0;
+    if (hourMatch) total += parseFloat(hourMatch[1]) * 60;
+    if (minMatch)  total += parseInt(minMatch[1]);
+    return Math.round(total);
+  }
+
+  // Format minutes → "1h 30min"
+  function fmtMins(m) {
+    if (!m) return null;
+    const h = Math.floor(m / 60), rem = m % 60;
+    if (h && rem) return `${h}h ${rem}min`;
+    if (h)        return `${h}h`;
+    return `${rem}min`;
+  }
+
+  function onServiceChange() {
+    const checked = document.querySelectorAll('input[name="service_ids"]:checked');
+    const summary = document.getElementById('durationSummary');
+    const txt     = document.getElementById('durationText');
+
+    let totalMins = 0;
+    let allHaveDuration = true;
+
+    checked.forEach(cb => {
+      const svc = SERVICE_DATA.find(s => s.id == cb.value);
+      const dur = svc ? parseDurationMins(svc.duration) : 0;
+      if (!dur) allHaveDuration = false;
+      totalMins += dur;
+    });
+
+    if (checked.length === 0 || totalMins === 0) {
+      summary.classList.remove('visible');
+      return;
+    }
+
+    const label = allHaveDuration
+      ? `Estimated total: ${fmtMins(totalMins)}`
+      : `Estimated total: ~${fmtMins(totalMins)}+ (some services have no set duration)`;
+
+    txt.textContent = label;
+    summary.classList.add('visible');
+  }
+
+  /* ── Slot picker ───────────────────────────────────────────── */
+  // Salon hours loaded from settings API — default fallback shown until fetch completes
+  let SLOT_START = 10 * 60;
+  let SLOT_END   = 19 * 60 + 30;
+  let SLOT_STEP  = 30;
+  let settingsLoaded = false;
+
+  async function loadSalonSettings() {
+    try {
+      const data = await fetch('/api/salon_settings').then(r => r.json());
+      const [oh, om] = data.open_time.split(':').map(Number);
+      const [ch, cm] = data.close_time.split(':').map(Number);
+      SLOT_START = oh * 60 + om;
+      SLOT_END   = ch * 60 + cm;
+      SLOT_STEP  = data.slot_interval;
+    } catch(_) {}
+    settingsLoaded = true;
+  }
+
+  let selectedTime = '{{ request.form.get("time", "") }}';
+
+  function allSlots() {
+    const slots = [];
+    for (let m = SLOT_START; m <= SLOT_END; m += SLOT_STEP) {
+      const h   = String(Math.floor(m / 60)).padStart(2, '0');
+      const min = String(m % 60).padStart(2, '0');
+      slots.push(`${h}:${min}`);
+    }
+    return slots;
+  }
+
+  function fmt12(t) {
+    const [h, m] = t.split(':').map(Number);
+    const suffix = h >= 12 ? 'PM' : 'AM';
+    const h12    = h % 12 || 12;
+    return `${h12}:${String(m).padStart(2,'0')} ${suffix}`;
+  }
+
+  async function loadSlots(dateVal, excludeToken) {
+    if (!dateVal) return;
+
+    // Ensure salon settings are loaded before generating slots
+    if (!settingsLoaded) await loadSalonSettings();
+
+    const placeholder = document.getElementById('slotPlaceholder');
+    const grid        = document.getElementById('slotGrid');
+    const legend      = document.getElementById('slotLegend');
+
+    placeholder.style.display = 'none';
+    grid.style.display        = 'grid';
+    legend.style.display      = 'flex';
+    grid.innerHTML = `<div class="slot-loading">
+      <svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+      Loading available slots…
+    </div>`;
+
+    let bookedTimes = [];
+    let dayBlocked  = false;
+    let blockReason = '';
+    try {
+      const url  = `/api/booked_slots?date=${dateVal}${excludeToken ? '&exclude='+excludeToken : ''}`;
+      const data = await fetch(url).then(r => r.json());
+      dayBlocked  = data.blocked || false;
+      blockReason = data.reason  || 'Salon closed';
+      bookedTimes = data.booked_times || [];
+    } catch (_) {}
+
+    if (dayBlocked) {
+      grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:20px;color:#dc2626;font-weight:600;font-size:0.88rem;">
+        🚫 ${blockReason} — no bookings available on this date.
+      </div>`;
+      legend.style.display = 'none';
+      return;
+    }
+
+    renderSlots(bookedTimes);
+  }
+
+  function renderSlots(bookedTimes) {
+    const grid = document.getElementById('slotGrid');
+    grid.innerHTML = '';
+
+    allSlots().forEach(slot => {
+      const isBooked   = bookedTimes.includes(slot);
+      const isSelected = selectedTime === slot;
+
+      const btn = document.createElement('button');
+      btn.type      = 'button';
+      btn.textContent = fmt12(slot);
+      btn.className = 'slot-btn' +
+        (isBooked   ? ' slot-booked'   : '') +
+        (isSelected ? ' slot-selected' : '');
+
+      if (!isBooked) {
+        btn.addEventListener('click', () => selectSlot(slot));
+      }
+      grid.appendChild(btn);
+    });
+  }
+
+  function selectSlot(slot) {
+    selectedTime = slot;
+    document.getElementById('selectedTimeInput').value = slot;
+
+    document.querySelectorAll('.slot-btn').forEach(btn => {
+      btn.classList.toggle('slot-selected', btn.textContent === fmt12(slot));
+    });
+  }
+
+  // Restore selected time if form was re-shown after error
+  window.addEventListener('DOMContentLoaded', async () => {
+    await loadSalonSettings();
+    const dateInput = document.getElementById('dateInput');
+    if (dateInput.value) {
+      await loadSlots(dateInput.value);
+      if (selectedTime) selectSlot(selectedTime);
+    }
+    if (selectedTime) {
+      document.getElementById('selectedTimeInput').value = selectedTime;
+    }
+  });
+
+  function validateForm() {
+    const phone = document.querySelector('input[name="phone"]').value.trim();
+    if (!/^\d{7,15}$/.test(phone)) {
+      alert('Please enter a valid phone number (digits only, 7–15 digits).');
+      return false;
+    }
+    if (!document.getElementById('selectedTimeInput').value) {
+      alert('Please select a time slot.');
+      return false;
+    }
+    const checked = document.querySelectorAll('input[name="service_ids"]:checked');
+    if (checked.length === 0) {
+      alert('Please select at least one service.');
+      return false;
+    }
+    return true;
+  }
+</script>
+
+{% endblock %}

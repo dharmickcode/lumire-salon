@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin – Lumière</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --royal-purple: #8a63b4;
+      --dark-purple:  #4a2d6f;
+      --pastel-lavender: #ede0f7;
+      --pastel-peach: #fce8df;
+      --text-light:   #9c8aac;
+    }
+
+    body {
+      font-family: 'Quicksand', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background:
+        radial-gradient(ellipse 70% 60% at 80% 20%, rgba(200,170,240,0.35) 0%, transparent 65%),
+        radial-gradient(ellipse 55% 50% at 10% 80%, rgba(255,210,190,0.3) 0%, transparent 60%),
+        linear-gradient(145deg, #f5eeff 0%, #fce8df 100%);
+      padding: 20px;
+    }
+
+    /* floating petals */
+    .petal {
+      position: fixed;
+      border-radius: 50% 0 50% 0;
+      opacity: 0;
+      animation: floatPetal linear infinite;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .petal:nth-child(1) { width:7px;  height:11px; background:rgba(200,150,220,0.3); left:10%; animation-duration:13s; animation-delay:0s;  top:-20px; }
+    .petal:nth-child(2) { width:5px;  height:9px;  background:rgba(240,180,160,0.25);left:40%; animation-duration:16s; animation-delay:4s;  top:-20px; }
+    .petal:nth-child(3) { width:8px;  height:12px; background:rgba(180,140,210,0.3); left:70%; animation-duration:11s; animation-delay:7s;  top:-20px; }
+    .petal:nth-child(4) { width:6px;  height:10px; background:rgba(255,200,180,0.25);left:85%; animation-duration:15s; animation-delay:2s;  top:-20px; }
+
+    @keyframes floatPetal {
+      0%   { transform: translateY(0) rotate(0deg);     opacity: 0; }
+      10%  { opacity: 0.7; }
+      90%  { opacity: 0.4; }
+      100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+    }
+
+    /* card */
+    .login-card {
+      position: relative;
+      z-index: 1;
+      background: rgba(255,255,255,0.88);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(138,99,180,0.15);
+      border-radius: 24px;
+      padding: 48px 44px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 20px 60px rgba(74,45,111,0.1), 0 4px 20px rgba(138,99,180,0.08);
+      animation: cardIn 0.7s cubic-bezier(0.22,1,0.36,1) both;
+    }
+
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* lock icon */
+    .lock-icon {
+      width: 52px; height: 52px;
+      background: linear-gradient(135deg, rgba(200,165,235,0.3), rgba(255,200,180,0.3));
+      border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px;
+    }
+
+    .lock-icon svg {
+      width: 22px; height: 22px;
+      stroke: var(--royal-purple);
+      fill: none;
+      stroke-width: 2;
+    }
+
+    .login-eyebrow {
+      font-size: 0.68rem;
+      letter-spacing: 3.5px;
+      text-transform: uppercase;
+      color: var(--text-light);
+      text-align: center;
+      margin-bottom: 6px;
+    }
+
+    .login-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2rem;
+      font-weight: 300;
+      color: var(--dark-purple);
+      text-align: center;
+      margin-bottom: 6px;
+      letter-spacing: 0.04em;
+    }
+
+    .login-title em {
+      font-style: italic;
+      color: var(--royal-purple);
+    }
+
+    .login-sub {
+      font-size: 0.82rem;
+      color: var(--text-light);
+      text-align: center;
+      margin-bottom: 34px;
+    }
+
+    /* divider */
+    .divider {
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      margin-bottom: 30px;
+    }
+    .divider::before, .divider::after {
+      content: ''; flex: 1; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(138,99,180,0.2));
+    }
+    .divider::after { background: linear-gradient(270deg, transparent, rgba(138,99,180,0.2)); }
+    .divider span { font-size: 0.55rem; color: var(--royal-purple); letter-spacing: 2px; }
+
+    /* flash messages */
+    .alert {
+      padding: 11px 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+    .alert-error   { background: #fdf0f0; color: #c0392b; border: 1px solid #f5c6c6; }
+    .alert-success { background: #f0faf4; color: #1e7e4a; border: 1px solid #b7e4c7; }
+
+    /* form */
+    .form-group { margin-bottom: 18px; }
+
+    .form-group label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--dark-purple);
+      margin-bottom: 8px;
+      opacity: 0.8;
+    }
+
+    .input-wrap { position: relative; }
+
+    .input-wrap svg {
+      position: absolute;
+      left: 14px; top: 50%; transform: translateY(-50%);
+      width: 16px; height: 16px;
+      stroke: var(--text-light);
+      fill: none;
+      stroke-width: 1.8;
+      pointer-events: none;
+      transition: stroke 0.3s;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 13px 15px 13px 42px;
+      border: 1.5px solid rgba(138,99,180,0.15);
+      border-radius: 12px;
+      font-family: 'Quicksand', sans-serif;
+      font-size: 0.92rem;
+      color: var(--dark-purple);
+      background: rgba(250,248,253,0.8);
+      outline: none;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    .form-control:focus {
+      border-color: var(--royal-purple);
+      box-shadow: 0 0 0 3px rgba(138,99,180,0.1);
+      background: #fff;
+    }
+
+    .form-control:focus + svg,
+    .input-wrap:focus-within svg { stroke: var(--royal-purple); }
+
+    /* submit */
+    .btn-login {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 50px;
+      background: linear-gradient(135deg, var(--royal-purple), var(--dark-purple));
+      color: #fff;
+      font-family: 'Quicksand', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 6px 20px rgba(138,99,180,0.3);
+      margin-top: 8px;
+    }
+
+    .btn-login:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 28px rgba(138,99,180,0.4);
+    }
+
+    .btn-login:active { transform: translateY(0); }
+
+    /* back link */
+    .back-link {
+      display: flex; align-items: center; justify-content: center; gap: 5px;
+      margin-top: 22px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-light);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .back-link:hover { color: var(--royal-purple); }
+    .back-link svg { width: 13px; height: 13px; stroke: currentColor; fill: none; }
+  </style>
+</head>
+<body>
+
+  <div class="petal"></div>
+  <div class="petal"></div>
+  <div class="petal"></div>
+  <div class="petal"></div>
+
+  <div class="login-card">
+
+    <div class="lock-icon">
+      <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    </div>
+
+    <p class="login-eyebrow">Restricted Area</p>
+    <h1 class="login-title">Admin <em>Portal</em></h1>
+    <p class="login-sub">Sign in to manage Lumière services</p>
+
+    <div class="divider"><span>✦ ✦ ✦</span></div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('admin_login') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <div class="form-group">
+        <label for="username">Username</label>
+        <div class="input-wrap">
+          <input type="text" id="username" name="username" class="form-control"
+                 placeholder="Enter admin username" required autocomplete="off"/>
+          <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <div class="input-wrap">
+          <input type="password" id="password" name="password" class="form-control"
+                 placeholder="Enter admin password" required/>
+          <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-login">Sign In</button>
+    </form>
+
+    <a href="{{ url_for('home') }}" class="back-link">
+      <svg viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"/></svg>
+      Back to website
+    </a>
+
+  </div>
+
+</body>
+</html>

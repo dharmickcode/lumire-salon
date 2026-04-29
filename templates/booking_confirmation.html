@@ -1,0 +1,610 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<!-- jsPDF — must load before downloadStatement() is called -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+  .confirm-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 78vh;
+    padding: 40px 20px;
+  }
+
+  .confirm-card {
+    background: var(--white);
+    border-radius: 24px;
+    box-shadow: 0 8px 40px rgba(138,99,180,0.13);
+    border: 1px solid var(--pastel-lavender);
+    max-width: 540px;
+    width: 100%;
+    overflow: hidden;
+    animation: cardIn 0.6s cubic-bezier(0.22,1,0.36,1) both;
+  }
+
+  @keyframes cardIn {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Hero band ── */
+  .confirm-hero {
+    background: linear-gradient(135deg, var(--dark-purple), #6b3fa0);
+    padding: 36px 36px 28px;
+    text-align: center;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .confirm-hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 70% 0%, rgba(200,165,235,0.25), transparent 60%);
+  }
+
+  .confirm-hero-icon  { font-size: 2.2rem; margin-bottom: 12px; position: relative; z-index: 1; }
+  .confirm-hero-eyebrow { font-size: 0.65rem; letter-spacing: 4px; text-transform: uppercase; opacity: 0.55; margin-bottom: 6px; position: relative; z-index: 1; }
+  .confirm-hero-title { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 300; letter-spacing: 0.05em; position: relative; z-index: 1; }
+  .confirm-hero-title em { font-style: italic; color: rgba(220,190,255,0.9); }
+  .confirm-hero-sub { font-size: 0.82rem; opacity: 0.6; margin-top: 8px; line-height: 1.6; position: relative; z-index: 1; }
+
+  /* ── Body ── */
+  .confirm-body { padding: 28px 32px 32px; }
+
+  /* ── Booking ID ── */
+  .token-box {
+    background: linear-gradient(135deg, rgba(138,99,180,0.07), rgba(200,180,240,0.08));
+    border: 1.5px solid rgba(138,99,180,0.2);
+    border-radius: 16px;
+    padding: 20px 24px;
+    text-align: center;
+    margin-bottom: 22px;
+  }
+
+  .token-label { font-size: 0.62rem; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: var(--text-light); margin-bottom: 8px; }
+  .token-value { font-family: 'Cormorant Garamond', serif; font-size: 2.2rem; font-weight: 700; color: var(--dark-purple); letter-spacing: 0.15em; margin-bottom: 6px; }
+  .token-sub   { font-size: 0.76rem; color: var(--text-light); margin-bottom: 14px; }
+
+  .token-btns { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; }
+
+  .copy-btn, .download-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: 'Quicksand', sans-serif;
+    font-size: 0.7rem; font-weight: 700;
+    letter-spacing: 1px; text-transform: uppercase;
+    padding: 8px 18px; border-radius: 50px;
+    cursor: pointer; transition: all 0.25s; border: none;
+  }
+
+  .copy-btn {
+    border: 1.5px solid rgba(138,99,180,0.25);
+    background: transparent; color: var(--royal-purple);
+  }
+  .copy-btn svg { width:12px; height:12px; stroke:currentColor; fill:none; stroke-width:2; }
+  .copy-btn:hover { background: var(--royal-purple); color: #fff; border-color: var(--royal-purple); }
+
+  .download-btn {
+    background: linear-gradient(135deg, var(--royal-purple), var(--dark-purple));
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(138,99,180,0.28);
+  }
+  .download-btn svg { width:13px; height:13px; stroke:currentColor; fill:none; stroke-width:2; }
+  .download-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(138,99,180,0.38); }
+
+  /* ── Section label ── */
+  .section-label {
+    font-size: 0.62rem; font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase;
+    color: var(--text-light); margin-bottom: 12px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-label::after { content:''; flex:1; height:1px; background: var(--pastel-lavender); }
+
+  /* ── Services ── */
+  .services-list { margin-bottom: 22px; }
+
+  .service-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 11px 16px;
+    background: #faf8fd;
+    border: 1px solid rgba(138,99,180,0.08);
+    border-radius: 10px;
+    margin-bottom: 8px; gap: 12px;
+  }
+  .service-row:last-child { margin-bottom: 0; }
+  .service-row-left { display: flex; align-items: center; gap: 10px; }
+  .svc-dot { width:8px; height:8px; border-radius:50%; background: linear-gradient(135deg, var(--royal-purple), var(--dark-purple)); flex-shrink:0; }
+  .svc-name { font-weight: 700; font-size: 0.9rem; color: var(--text-dark); }
+  .svc-duration { font-size: 0.76rem; color: var(--text-light); }
+  .svc-price { font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; font-weight: 600; color: var(--royal-purple); white-space: nowrap; }
+
+  /* ── Details ── */
+  .details-grid { margin-bottom: 22px; }
+
+  .detail-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 11px 0;
+    border-bottom: 1px solid rgba(138,99,180,0.07);
+    font-size: 0.88rem;
+  }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-label { color: var(--text-light); font-weight: 600; }
+  .detail-value { color: var(--text-dark); font-weight: 600; text-align: right; }
+
+  .badge { display: inline-block; padding: 4px 12px; border-radius: 50px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
+  .badge-pending   { background:#fff8e1; color:#f59e0b; border:1px solid #fde68a; }
+  .badge-confirmed { background:#f0faf4; color:#16a34a; border:1px solid #bbf7d0; }
+  .badge-completed { background:#eff6ff; color:#2563eb; border:1px solid #bfdbfe; }
+  .badge-cancelled { background:#fdf0f0; color:#dc2626; border:1px solid #fecaca; }
+
+  /* ── Info note ── */
+  .info-note {
+    background: rgba(138,99,180,0.05); border: 1px solid rgba(138,99,180,0.12);
+    border-radius: 12px; padding: 14px 16px; margin-bottom: 24px;
+    display: flex; align-items: flex-start; gap: 10px;
+    font-size: 0.82rem; color: #7a6080; line-height: 1.6;
+  }
+  .info-note svg { width:15px; height:15px; stroke:var(--royal-purple); fill:none; stroke-width:2; flex-shrink:0; margin-top:2px; }
+
+  /* ── Actions ── */
+  .confirm-actions { display: flex; flex-direction: column; gap: 12px; }
+
+  .btn-primary {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 14px 28px; border-radius: 50px;
+    font-family: 'Quicksand', sans-serif; font-size: 0.82rem; font-weight: 700;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    background: linear-gradient(135deg, var(--royal-purple), var(--dark-purple));
+    color: #fff; text-decoration: none; border: none; cursor: pointer;
+    transition: all 0.3s; box-shadow: 0 6px 20px rgba(138,99,180,0.28);
+  }
+  .btn-primary svg { width:15px; height:15px; stroke:currentColor; fill:none; stroke-width:2; }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(138,99,180,0.38); }
+
+  .btn-outline {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 13px 28px; border-radius: 50px;
+    font-family: 'Quicksand', sans-serif; font-size: 0.82rem; font-weight: 700;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    background: transparent; color: var(--royal-purple);
+    border: 1.5px solid rgba(138,99,180,0.3);
+    text-decoration: none; transition: all 0.3s;
+  }
+  .btn-outline:hover { background: var(--royal-purple); color: #fff; border-color: var(--royal-purple); }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 480px) {
+    .confirm-body { padding: 22px 18px 28px; }
+    .confirm-hero { padding: 28px 20px 22px; }
+    .token-value  { font-size: 1.7rem; letter-spacing: 0.1em; }
+    .confirm-hero-title { font-size: 1.7rem; }
+    .detail-row   { flex-direction: column; align-items: flex-start; gap: 3px; }
+    .detail-value { text-align: left; }
+    .token-btns   { flex-direction: column; }
+    .copy-btn, .download-btn { width: 100%; justify-content: center; }
+  }
+</style>
+
+{% set b0 = bookings[0] %}
+{% set b0_date     = b0.date.strftime('%A, %d %B %Y')         if b0.date       else '' %}
+{% set b0_time     = b0.time.strftime('%I:%M %p')              if b0.time       else '' %}
+{% set b0_bookedon = b0.created_at.strftime('%d %b %Y, %I:%M %p') if b0.created_at else '' %}
+
+<!-- Store booking data for JS (avoids Jinja/JS quote conflicts) -->
+<script id="bookingData" type="application/json">
+{
+  "token":    "{{ token }}",
+  "name":     "{{ b0.name or '' }}",
+  "phone":    "{{ b0.phone or '' }}",
+  "date":     "{{ b0_date }}",
+  "time":     "{{ b0_time }}",
+  "bookedOn": "{{ b0_bookedon }}",
+  "status":   "{{ b0.status }}",
+  "total":    {{ bookings | length }},
+  "services": [
+    {% for b in bookings %}
+    {
+      "name":     "{{ b.service.name }}",
+      "price":    "₹{{ b.service.price }}",
+      "duration": "{{ b.service.duration or '' }}"
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ]
+}
+</script>
+
+<div class="confirm-wrapper">
+  <div class="confirm-card">
+
+    <!-- Hero -->
+    <div class="confirm-hero">
+      <div class="confirm-hero-icon">🎉</div>
+      <div class="confirm-hero-eyebrow">Booking Confirmed</div>
+      <div class="confirm-hero-title">You're all <em>set!</em></div>
+      <div class="confirm-hero-sub">Your appointment has been booked.<br>Save your Booking ID below.</div>
+    </div>
+
+    <div class="confirm-body">
+
+      <!-- Booking ID + buttons -->
+      <div class="token-box">
+        <div class="token-label">Your Booking ID</div>
+        <div class="token-value" id="tokenVal">{{ token }}</div>
+        <div class="token-sub">Use this ID <strong>or</strong> your mobile number to check status</div>
+        <div class="token-btns">
+          <button class="copy-btn" id="copyBtn" onclick="copyToken()">
+            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy ID
+          </button>
+          <button class="download-btn" id="dlBtn" onclick="downloadStatement()">
+            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download Statement
+          </button>
+        </div>
+      </div>
+
+      <!-- Services -->
+      <div class="services-list">
+        <div class="section-label">Services Booked</div>
+        {% for b in bookings %}
+        <div class="service-row">
+          <div class="service-row-left">
+            <span class="svc-dot"></span>
+            <div>
+              <div class="svc-name">{{ b.service.name }}</div>
+              {% if b.service.duration %}
+              <div class="svc-duration">⏱ {{ b.service.duration }}</div>
+              {% endif %}
+            </div>
+          </div>
+          <div class="svc-price">₹{{ b.service.price }}</div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- Details -->
+      <div class="details-grid">
+        <div class="section-label">Appointment Details</div>
+        <div class="detail-row">
+          <span class="detail-label">Name</span>
+          <span class="detail-value">{{ bookings[0].name or '—' }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Phone</span>
+          <span class="detail-value">{{ bookings[0].phone or '—' }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Date</span>
+          <span class="detail-value">{{ b0_date or '—' }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Time</span>
+          <span class="detail-value">{{ b0_time or '—' }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Total Services</span>
+          <span class="detail-value">{{ bookings | length }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Status</span>
+          <span class="detail-value">
+            <span class="badge badge-{{ bookings[0].status }}">{{ bookings[0].status }}</span>
+          </span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Booked On</span>
+          <span class="detail-value">{{ b0_bookedon or '—' }}</span>
+        </div>
+      </div>
+
+      <!-- Note -->
+      <div class="info-note">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span>Use Booking ID <strong>{{ token }}</strong> or your mobile number to check your appointment status anytime.</span>
+      </div>
+
+      <!-- Actions -->
+      <div class="confirm-actions">
+        <a href="{{ url_for('check_booking_status') }}" class="btn-primary">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Check Booking Status
+        </a>
+        <a href="{{ url_for('book_appointment') }}" class="btn-outline">
+          Book Another Appointment
+        </a>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  /* ── Copy token ── */
+  function copyToken() {
+    const token = document.getElementById('tokenVal').innerText;
+    navigator.clipboard.writeText(token).then(() => {
+      const btn = document.getElementById('copyBtn');
+      btn.innerHTML = `<svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2.5"><polyline points="20 6 9 17 4 12"/></svg> Copied!`;
+      setTimeout(() => {
+        btn.innerHTML = `<svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy ID`;
+      }, 2500);
+    });
+  }
+
+  /* ── Download statement as real PDF using jsPDF ── */
+  function downloadStatement() {
+    const btn = document.getElementById('dlBtn');
+
+    // Show loading state
+    btn.disabled = true;
+    btn.innerHTML = `<svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Generating...`;
+
+    // Small delay so the button state renders before heavy PDF work
+    setTimeout(() => {
+      try {
+        _buildPDF();
+      } catch(err) {
+        alert('Could not generate PDF: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download Statement`;
+      }
+    }, 60);
+  }
+
+  function _buildPDF() {
+    const d = JSON.parse(document.getElementById('bookingData').textContent);
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+    const W      = doc.internal.pageSize.getWidth();   // 210
+    const purple = [74,  45, 111];
+    const violet = [138, 99, 180];
+    const light  = [156, 138, 172];
+    const dark   = [45,  32,  53];
+    const white  = [255, 255, 255];
+
+    const statusColor = {
+      pending:   [245, 158, 11],
+      confirmed: [ 22, 163, 74],
+      completed: [ 37,  99,235],
+      cancelled: [220,  38, 38],
+    };
+    const sBadgeColor = statusColor[d.status] || statusColor.pending;
+
+    let y = 0;
+
+    // ── Purple header band ──────────────────────────────────────
+    doc.setFillColor(...purple);
+    doc.rect(0, 0, W, 42, 'F');
+
+    // Subtle top-right glow
+    doc.setFillColor(160, 120, 210);
+    doc.setGState(new doc.GState({ opacity: 0.12 }));
+    doc.ellipse(175, 8, 35, 22, 'F');
+    doc.setGState(new doc.GState({ opacity: 1 }));
+
+    // "BOOKING STATEMENT" eyebrow
+    doc.setTextColor(...white);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setCharSpace(3);
+    doc.text('BOOKING STATEMENT', W / 2, 11, { align: 'center' });
+    doc.setCharSpace(0);
+
+    // Salon name
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(22);
+    doc.setCharSpace(6);
+    doc.text('LUMIERE', W / 2, 24, { align: 'center' });
+    doc.setCharSpace(0);
+
+    // Subtitle
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setCharSpace(2.5);
+    doc.setTextColor(200, 180, 230);
+    doc.text('LUXURY HAIR SALON', W / 2, 32, { align: 'center' });
+    doc.setCharSpace(0);
+
+    // Gold top border line
+    doc.setDrawColor(201, 169, 110);
+    doc.setLineWidth(0.5);
+    doc.line(20, 0.4, W - 20, 0.4);
+
+    y = 52;
+
+    // ── Booking ID section ──────────────────────────────────────
+    // Light lavender box
+    doc.setFillColor(245, 240, 252);
+    doc.setDrawColor(200, 175, 230);
+    doc.setLineWidth(0.4);
+    doc.roundedRect(15, y - 6, W - 30, 28, 4, 4, 'FD');
+
+    doc.setTextColor(...light);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setCharSpace(2);
+    doc.text('BOOKING ID', W / 2, y + 1, { align: 'center' });
+    doc.setCharSpace(0);
+
+    doc.setTextColor(...purple);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(20);
+    doc.setCharSpace(4);
+    doc.text(d.token, W / 2, y + 10, { align: 'center' });
+    doc.setCharSpace(0);
+
+    // Status badge
+    const badgeTxt  = d.status.toUpperCase();
+    doc.setFontSize(8);
+    const bw = doc.getTextWidth(badgeTxt) + 10;
+    const bx = (W - bw) / 2;
+    doc.setFillColor(245, 240, 252);
+    doc.setDrawColor(...sBadgeColor);
+    doc.setLineWidth(0.5);
+    doc.roundedRect(bx, y + 13, bw, 7, 2, 2, 'FD');
+    doc.setTextColor(...sBadgeColor);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.setCharSpace(1);
+    doc.text(badgeTxt, W / 2, y + 18.5, { align: 'center' });
+    doc.setCharSpace(0);
+
+    y += 34;
+
+    // ── Dashed divider ──────────────────────────────────────────
+    doc.setDrawColor(210, 195, 230);
+    doc.setLineWidth(0.3);
+    doc.setLineDashPattern([1.5, 1.5], 0);
+    doc.line(15, y, W - 15, y);
+    doc.setLineDashPattern([], 0);
+
+    y += 8;
+
+    // ── Section: Services Booked ────────────────────────────────
+    doc.setTextColor(...light);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.setCharSpace(2);
+    doc.text('SERVICES BOOKED', 15, y);
+    doc.setCharSpace(0);
+
+    // Section underline
+    doc.setDrawColor(...violet);
+    doc.setLineWidth(0.4);
+    doc.line(15, y + 1.5, 55, y + 1.5);
+
+    y += 7;
+
+    d.services.forEach((s, i) => {
+      // Alternating row bg
+      if (i % 2 === 0) {
+        doc.setFillColor(249, 246, 253);
+        doc.rect(15, y - 4, W - 30, 9, 'F');
+      }
+
+      // Dot
+      doc.setFillColor(...violet);
+      doc.circle(19.5, y + 0.3, 1.3, 'F');
+
+      // Service name
+      doc.setTextColor(...dark);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.text(s.name, 24, y + 1);
+
+      // Duration if present
+      if (s.duration) {
+        doc.setTextColor(...light);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7.5);
+        doc.text(s.duration, 24, y + 5.5);
+      }
+
+      // Price (right-aligned)
+      doc.setTextColor(...violet);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.text(s.price, W - 15, y + 1, { align: 'right' });
+
+      // Row separator
+      doc.setDrawColor(230, 220, 242);
+      doc.setLineWidth(0.2);
+      doc.line(15, y + 5, W - 15, y + 5);
+
+      y += s.duration ? 11 : 9;
+    });
+
+    y += 4;
+
+    // ── Solid divider ───────────────────────────────────────────
+    doc.setDrawColor(220, 208, 235);
+    doc.setLineWidth(0.3);
+    doc.line(15, y, W - 15, y);
+
+    y += 8;
+
+    // ── Section: Appointment Details ────────────────────────────
+    doc.setTextColor(...light);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.setCharSpace(2);
+    doc.text('APPOINTMENT DETAILS', 15, y);
+    doc.setCharSpace(0);
+
+    doc.setDrawColor(...violet);
+    doc.setLineWidth(0.4);
+    doc.line(15, y + 1.5, 65, y + 1.5);
+
+    y += 7;
+
+    const details = [
+      ['Customer Name',    d.name     || '—'],
+      ['Phone Number',     d.phone    || '—'],
+      ['Appointment Date', d.date     || '—'],
+      ['Appointment Time', d.time     || '—'],
+      ['Total Services',   String(d.total)],
+      ['Booking Made On',  d.bookedOn || '—'],
+    ];
+
+    details.forEach(([label, val], i) => {
+      if (i % 2 === 0) {
+        doc.setFillColor(249, 246, 253);
+        doc.rect(15, y - 4, W - 30, 8.5, 'F');
+      }
+
+      doc.setTextColor(...light);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      doc.text(label, 19, y + 0.8);
+
+      doc.setTextColor(...dark);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8.5);
+      doc.text(String(val), W - 17, y + 0.8, { align: 'right' });
+
+      doc.setDrawColor(230, 220, 242);
+      doc.setLineWidth(0.2);
+      doc.line(15, y + 4.5, W - 15, y + 4.5);
+
+      y += 8.5;
+    });
+
+    y += 6;
+
+    // ── Footer band ─────────────────────────────────────────────
+    const pageH = doc.internal.pageSize.getHeight();  // 297
+    doc.setFillColor(250, 248, 253);
+    doc.setDrawColor(220, 208, 235);
+    doc.setLineWidth(0.3);
+    doc.rect(0, pageH - 30, W, 30, 'FD');
+
+    // Gold top border on footer
+    doc.setDrawColor(201, 169, 110);
+    doc.setLineWidth(0.5);
+    doc.line(0, pageH - 30, W, pageH - 30);
+
+    doc.setTextColor(...light);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.5);
+    doc.text('Please arrive 10 minutes before your appointment.', W / 2, pageH - 21, { align: 'center' });
+    doc.text('Show this statement at the salon counter.', W / 2, pageH - 15, { align: 'center' });
+
+    doc.setTextColor(180, 160, 205);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.setCharSpace(2);
+    doc.text('LUMIERE — LUXURY HAIR SALON', W / 2, pageH - 7, { align: 'center' });
+    doc.setCharSpace(0);
+
+    // ── Save ────────────────────────────────────────────────────
+    doc.save(`Lumiere-Booking-${d.token}.pdf`);
+  }  // end _buildPDF
+</script>
+
+{% endblock %}

@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Settings – Lumière Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --royal-purple:#8a63b4; --dark-purple:#4a2d6f; --pastel-lavender:#ede0f7; --text-light:#9c8aac; --text-dark:#2d2035; --sidebar-w:240px; }
+    body { font-family:'Quicksand',sans-serif; background:#f5f2fa; color:var(--text-dark); min-height:100vh; display:flex; }
+    a { text-decoration:none; color:inherit; }
+
+    /* ── Sidebar ── */
+    .sidebar { width:var(--sidebar-w); min-height:100vh; background:var(--dark-purple); display:flex; flex-direction:column; position:fixed; top:0; left:0; z-index:200; box-shadow:4px 0 24px rgba(74,45,111,0.18); transition:transform 0.35s cubic-bezier(0.22,1,0.36,1); }
+    .sidebar-logo { padding:28px 24px 20px; border-bottom:1px solid rgba(255,255,255,0.07); }
+    .sidebar-logo-name { font-family:'Cormorant Garamond',serif; font-size:1.3rem; font-weight:300; letter-spacing:0.2em; color:#fff; }
+    .sidebar-logo-name em { font-style:italic; color:rgba(200,165,235,0.9); }
+    .sidebar-logo-tag { font-size:0.58rem; letter-spacing:3px; text-transform:uppercase; color:rgba(255,255,255,0.3); margin-top:3px; }
+    .sidebar-badge { display:inline-block; margin-top:8px; font-size:0.6rem; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; background:rgba(138,99,180,0.35); color:rgba(200,165,235,0.9); padding:3px 8px; border-radius:50px; border:1px solid rgba(138,99,180,0.4); }
+    .sidebar-nav { flex:1; padding:20px 0; }
+    .sidebar-section { font-size:0.6rem; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:rgba(255,255,255,0.2); padding:14px 24px 8px; }
+    .sidebar-link { display:flex; align-items:center; gap:12px; padding:11px 24px; font-size:0.83rem; font-weight:600; color:rgba(255,255,255,0.5); transition:all 0.25s; border-left:3px solid transparent; }
+    .sidebar-link svg { width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:1.8; flex-shrink:0; }
+    .sidebar-link:hover { color:#fff; background:rgba(255,255,255,0.05); }
+    .sidebar-link.active { color:#fff; background:rgba(138,99,180,0.2); border-left-color:var(--royal-purple); }
+    .sidebar-footer { padding:20px 24px; border-top:1px solid rgba(255,255,255,0.07); }
+    .logout-btn { display:flex; align-items:center; gap:10px; font-size:0.8rem; font-weight:600; color:rgba(255,255,255,0.4); transition:color 0.2s; cursor:pointer; background:none; border:none; font-family:'Quicksand',sans-serif; width:100%; padding:0; }
+    .logout-btn svg { width:15px; height:15px; stroke:currentColor; fill:none; stroke-width:2; }
+    .logout-btn:hover { color:#ff8a8a; }
+    .sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(74,45,111,0.45); backdrop-filter:blur(3px); z-index:150; }
+    .sidebar-overlay.open { display:block; }
+
+    /* ── Mobile topbar ── */
+    .mobile-topbar { display:none; position:fixed; top:0; left:0; right:0; height:60px; background:var(--dark-purple); z-index:100; align-items:center; justify-content:space-between; padding:0 18px; box-shadow:0 2px 16px rgba(74,45,111,0.25); }
+    .mobile-logo { font-family:'Cormorant Garamond',serif; font-size:1.15rem; font-weight:300; letter-spacing:0.2em; color:#fff; }
+    .mobile-logo em { font-style:italic; color:rgba(200,165,235,0.9); }
+    .mobile-topbar-right { display:flex; align-items:center; gap:8px; }
+    .mobile-logout-btn { display:flex; align-items:center; gap:6px; background:rgba(255,100,100,0.15); border:1px solid rgba(255,100,100,0.25); border-radius:8px; padding:7px 12px; cursor:pointer; font-family:'Quicksand',sans-serif; font-size:0.72rem; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:rgba(255,160,160,0.9); transition:all 0.25s; }
+    .mobile-logout-btn svg { width:14px; height:14px; stroke:currentColor; fill:none; stroke-width:2; }
+    .mobile-logout-btn:hover { background:rgba(220,60,60,0.3); color:#ffaaaa; }
+    .mobile-menu-btn { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); border-radius:8px; width:38px; height:38px; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-direction:column; gap:4px; padding:0; }
+    .mobile-menu-btn span { display:block; width:18px; height:2px; background:#fff; border-radius:2px; transition:all 0.3s ease; }
+    .mobile-menu-btn.open span:nth-child(1) { transform:translateY(6px) rotate(45deg); }
+    .mobile-menu-btn.open span:nth-child(2) { opacity:0; }
+    .mobile-menu-btn.open span:nth-child(3) { transform:translateY(-6px) rotate(-45deg); }
+
+    /* ── Main ── */
+    .main { margin-left:var(--sidebar-w); flex:1; display:flex; flex-direction:column; min-height:100vh; }
+    .topbar { background:#fff; border-bottom:1px solid rgba(138,99,180,0.1); padding:0 36px; height:64px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:50; }
+    .topbar-title { font-family:'Cormorant Garamond',serif; font-size:1.4rem; font-weight:400; color:var(--dark-purple); }
+    .topbar-title em { font-style:italic; color:var(--royal-purple); }
+    .topbar-right { display:flex; align-items:center; gap:12px; }
+    .admin-avatar { width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg,var(--royal-purple),var(--dark-purple)); display:flex; align-items:center; justify-content:center; font-size:0.78rem; font-weight:700; color:#fff; }
+    .admin-name { font-size:0.82rem; font-weight:600; color:var(--text-light); }
+
+    .page-content { padding:36px; flex:1; max-width:960px; }
+
+    /* ── Alerts ── */
+    .alert { padding:12px 18px; border-radius:10px; margin-bottom:22px; font-size:0.88rem; font-weight:500; display:flex; align-items:flex-start; gap:8px; }
+    .alert svg { width:15px; height:15px; stroke:currentColor; fill:none; stroke-width:2; flex-shrink:0; margin-top:1px; }
+    .alert-success { background:#f0faf4; color:#1e7e4a; border:1px solid #b7e4c7; }
+    .alert-error   { background:#fdf0f0; color:#c0392b; border:1px solid #f5c6c6; }
+
+    /* ── Section card ── */
+    .settings-card { background:#fff; border:1px solid rgba(138,99,180,0.1); border-radius:20px; margin-bottom:24px; overflow:hidden; }
+    .settings-card-header { padding:22px 28px 16px; border-bottom:1px solid rgba(138,99,180,0.07); display:flex; align-items:center; gap:14px; }
+    .settings-card-icon { width:40px; height:40px; border-radius:12px; background:linear-gradient(135deg,rgba(138,99,180,0.12),rgba(200,165,235,0.15)); display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0; }
+    .settings-card-title { font-family:'Cormorant Garamond',serif; font-size:1.35rem; font-weight:400; color:var(--dark-purple); }
+    .settings-card-title em { font-style:italic; color:var(--royal-purple); }
+    .settings-card-sub { font-size:0.8rem; color:var(--text-light); margin-top:2px; }
+    .settings-card-body { padding:24px 28px; }
+
+    /* ── Form elements ── */
+    .form-row-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:18px; }
+    .form-group { margin-bottom:18px; }
+    .form-group:last-child { margin-bottom:0; }
+    .form-group label { display:block; font-size:0.7rem; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--dark-purple); opacity:0.7; margin-bottom:8px; }
+    .form-hint { font-size:0.74rem; color:var(--text-light); margin-top:5px; }
+    .form-control { width:100%; padding:11px 14px; border:1.5px solid rgba(138,99,180,0.15); border-radius:10px; font-family:'Quicksand',sans-serif; font-size:0.9rem; color:var(--text-dark); background:#faf8fd; outline:none; transition:border-color 0.3s, box-shadow 0.3s; }
+    .form-control:focus { border-color:var(--royal-purple); box-shadow:0 0 0 3px rgba(138,99,180,0.1); background:#fff; }
+
+    /* Preview strip */
+    .hours-preview { display:flex; align-items:center; gap:10px; margin-top:16px; padding:12px 16px; background:rgba(138,99,180,0.05); border:1px solid rgba(138,99,180,0.12); border-radius:10px; font-size:0.82rem; color:var(--text-dark); flex-wrap:wrap; }
+    .hours-preview svg { width:15px; height:15px; stroke:var(--royal-purple); fill:none; stroke-width:2; flex-shrink:0; }
+    .hours-preview strong { color:var(--dark-purple); }
+
+    /* ── Buttons ── */
+    .btn { display:inline-flex; align-items:center; justify-content:center; gap:7px; padding:11px 22px; border-radius:50px; font-family:'Quicksand',sans-serif; font-size:0.78rem; font-weight:700; letter-spacing:1px; text-transform:uppercase; cursor:pointer; border:none; transition:all 0.3s; text-decoration:none; white-space:nowrap; }
+    .btn svg { width:13px; height:13px; stroke:currentColor; fill:none; stroke-width:2.5; }
+    .btn-primary { background:linear-gradient(135deg,var(--royal-purple),var(--dark-purple)); color:#fff; box-shadow:0 4px 16px rgba(138,99,180,0.28); }
+    .btn-primary:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(138,99,180,0.38); }
+    .btn-outline { background:transparent; color:var(--royal-purple); border:1.5px solid rgba(138,99,180,0.3); }
+    .btn-outline:hover { background:var(--royal-purple); color:#fff; border-color:var(--royal-purple); }
+    .btn-danger-soft { background:transparent; color:#e05555; border:1.5px solid rgba(220,85,85,0.25); }
+    .btn-danger-soft:hover { background:#e05555; color:#fff; border-color:#e05555; }
+    .btn-export { background:linear-gradient(135deg,#16a34a,#15803d); color:#fff; box-shadow:0 4px 16px rgba(22,163,74,0.22); }
+    .btn-export:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(22,163,74,0.32); }
+    .btn-actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:6px; }
+
+    /* ── Blocked dates list ── */
+    .blocked-list { display:flex; flex-direction:column; gap:10px; }
+    .blocked-item { display:flex; align-items:center; justify-content:space-between; padding:13px 18px; background:#faf8fd; border:1px solid rgba(138,99,180,0.1); border-radius:12px; gap:12px; }
+    .blocked-item.past { opacity:0.55; }
+    .blocked-date-val { font-family:'Cormorant Garamond',serif; font-size:1.15rem; font-weight:600; color:var(--dark-purple); }
+    .blocked-reason { font-size:0.8rem; color:var(--text-light); font-weight:600; margin-top:2px; }
+    .blocked-tag { display:inline-block; padding:3px 10px; border-radius:50px; font-size:0.66rem; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; margin-top:4px; }
+    .tag-upcoming { background:#f0fdf4; color:#16a34a; border:1px solid #bbf7d0; }
+    .tag-past     { background:#f5f5f5; color:#aaa; border:1px solid #e0e0e0; }
+    .empty-blocked { text-align:center; padding:30px 20px; color:var(--text-light); font-size:0.88rem; }
+    .empty-blocked svg { width:28px; height:28px; stroke:var(--text-light); fill:none; stroke-width:1.5; margin:0 auto 10px; display:block; opacity:0.5; }
+
+    /* ── Add blocked date form ── */
+    .add-blocked-row { display:grid; grid-template-columns:1fr 2fr auto; gap:14px; align-items:end; }
+
+    /* ── Responsive ── */
+    @media (max-width:900px) {
+      .sidebar { transform:translateX(-100%); }
+      .sidebar.open { transform:translateX(0); }
+      .main { margin-left:0; padding-top:60px; }
+      .mobile-topbar { display:flex; }
+      .topbar { top:60px; padding:0 18px; height:54px; }
+      .admin-name { display:none; }
+      .page-content { padding:18px 14px; }
+    }
+    @media (max-width:640px) {
+      .form-row-3 { grid-template-columns:1fr; }
+      .add-blocked-row { grid-template-columns:1fr 1fr; }
+      .add-blocked-row .btn { grid-column:1/-1; }
+      .settings-card-body { padding:18px 16px; }
+      .settings-card-header { padding:16px 16px 14px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<!-- Sidebar -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-name">L U M <em>I</em> È R E</div>
+    <div class="sidebar-logo-tag">Luxury Hair Salon</div>
+    <span class="sidebar-badge">Admin Panel</span>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="sidebar-section">Manage</div>
+    <a href="{{ url_for('admin_analytics') }}" class="sidebar-link" onclick="closeSidebar()">
+      <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Analytics
+    </a>
+    <a href="{{ url_for('admin_dashboard') }}" class="sidebar-link" onclick="closeSidebar()">
+      <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>Services
+    </a>
+    <a href="{{ url_for('admin_bookings') }}" class="sidebar-link" onclick="closeSidebar()">
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Bookings
+    </a>
+    <a href="{{ url_for('admin_calendar') }}" class="sidebar-link" onclick="closeSidebar()">
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>Calendar
+    </a>
+    <div class="sidebar-section" style="margin-top:16px;">Settings</div>
+    <a href="{{ url_for('admin_settings') }}" class="sidebar-link active" onclick="closeSidebar()">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings
+    </a>
+    <div class="sidebar-section" style="margin-top:16px;">Site</div>
+    <a href="{{ url_for('home') }}" class="sidebar-link" target="_blank">
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>View Website
+    </a>
+  </nav>
+  <div class="sidebar-footer">
+    <form method="POST" action="{{ url_for('admin_logout') }}" style="margin:0">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <button type="submit" class="logout-btn">
+        <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Sign Out
+      </button>
+    </form>
+  </div>
+</aside>
+
+<!-- Mobile topbar -->
+<div class="mobile-topbar">
+  <div class="mobile-logo">L U M <em>I</em> È R E</div>
+  <div class="mobile-topbar-right">
+    <form method="POST" action="{{ url_for('admin_logout') }}" style="margin:0">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <button type="submit" class="mobile-logout-btn">
+        <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Logout
+      </button>
+    </form>
+    <button class="mobile-menu-btn" id="menuBtn" onclick="toggleSidebar()">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</div>
+
+<!-- Main -->
+<div class="main">
+  <header class="topbar">
+    <h1 class="topbar-title">Salon <em>Settings</em></h1>
+    <div class="topbar-right">
+      <span class="admin-name">Admin</span>
+      <div class="admin-avatar">AD</div>
+    </div>
+  </header>
+
+  <div class="page-content">
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}{% for cat, msg in messages %}
+        <div class="alert alert-{{ cat }}">
+          {% if cat == 'error' %}
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          {% else %}
+            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          {% endif %}
+          {{ msg }}
+        </div>
+      {% endfor %}{% endif %}
+    {% endwith %}
+
+    <!-- ══ Working Hours ══ -->
+    <div class="settings-card">
+      <div class="settings-card-header">
+        <div class="settings-card-icon">🕐</div>
+        <div>
+          <div class="settings-card-title">Working <em>Hours</em></div>
+          <div class="settings-card-sub">Set when the salon opens and closes. Customers will only see slots within these hours.</div>
+        </div>
+      </div>
+      <div class="settings-card-body">
+        <form method="POST">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <input type="hidden" name="action" value="save_hours"/>
+          <div class="form-row-3">
+            <div class="form-group">
+              <label>Opening Time</label>
+              <input type="time" name="open_time" class="form-control" value="{{ settings.open_time }}" required id="openTime" oninput="updatePreview()"/>
+              <p class="form-hint">Earliest slot customers can book</p>
+            </div>
+            <div class="form-group">
+              <label>Closing Time</label>
+              <input type="time" name="close_time" class="form-control" value="{{ settings.close_time }}" required id="closeTime" oninput="updatePreview()"/>
+              <p class="form-hint">Last slot available for booking</p>
+            </div>
+            <div class="form-group">
+              <label>Slot Interval</label>
+              <select name="slot_interval" class="form-control" id="slotInterval" onchange="updatePreview()">
+                <option value="15"  {% if settings.slot_interval == '15'  %}selected{% endif %}>15 minutes</option>
+                <option value="30"  {% if settings.slot_interval == '30'  %}selected{% endif %}>30 minutes</option>
+                <option value="45"  {% if settings.slot_interval == '45'  %}selected{% endif %}>45 minutes</option>
+                <option value="60"  {% if settings.slot_interval == '60'  %}selected{% endif %}>60 minutes</option>
+              </select>
+              <p class="form-hint">Gap between each available slot</p>
+            </div>
+          </div>
+
+          <!-- Live preview -->
+          <div class="hours-preview" id="hoursPreview">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <span id="previewText">Loading…</span>
+          </div>
+
+          <div class="btn-actions" style="margin-top:20px;">
+            <button type="submit" class="btn btn-primary">
+              <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              Save Working Hours
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ══ Block Dates ══ -->
+    <div class="settings-card">
+      <div class="settings-card-header">
+        <div class="settings-card-icon">🚫</div>
+        <div>
+          <div class="settings-card-title">Block <em>Dates</em></div>
+          <div class="settings-card-sub">Mark specific dates as closed. No customer can book on blocked dates.</div>
+        </div>
+      </div>
+      <div class="settings-card-body">
+
+        <!-- Add form -->
+        <form method="POST" style="margin-bottom:24px;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <input type="hidden" name="action" value="block_date"/>
+          <div class="add-blocked-row">
+            <div class="form-group" style="margin-bottom:0;">
+              <label>Date to Block</label>
+              <input type="date" name="block_date" class="form-control" min="{{ today }}" required/>
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+              <label>Reason <span style="font-weight:400;opacity:0.6;">(optional)</span></label>
+              <input type="text" name="reason" class="form-control" placeholder="e.g. Public Holiday, Renovation…"/>
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+              <label>&nbsp;</label>
+              <button type="submit" class="btn btn-primary" style="width:100%;">
+                <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Block Date
+              </button>
+            </div>
+          </div>
+        </form>
+
+        <!-- Existing blocked dates -->
+        {% if blocked_dates %}
+          <div class="blocked-list">
+            {% for bd in blocked_dates %}
+              {% set is_past = bd.date < today_date %}
+              <div class="blocked-item {{ 'past' if is_past }}">
+                <div>
+                  <div class="blocked-date-val">{{ bd.date.strftime('%A, %d %B %Y') }}</div>
+                  {% if bd.reason %}
+                    <div class="blocked-reason">{{ bd.reason }}</div>
+                  {% endif %}
+                  <span class="blocked-tag {{ 'tag-past' if is_past else 'tag-upcoming' }}">
+                    {{ 'Past' if is_past else 'Upcoming' }}
+                  </span>
+                </div>
+                {% set bd_label = bd.date.strftime('%d %b %Y') %}
+                <form method="POST">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                  <input type="hidden" name="action" value="unblock_date"/>
+                  <input type="hidden" name="bd_id" value="{{ bd.id }}"/>
+                  <button type="submit" class="btn btn-danger-soft"
+                    data-label="{{ bd_label }}"
+                    onclick="return confirm('Unblock ' + this.dataset.label + '?')">
+                    <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    Unblock
+                  </button>
+                </form>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty-blocked">
+            <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            No dates blocked yet. Add a holiday or closure above.
+          </div>
+        {% endif %}
+
+      </div>
+    </div>
+
+    <!-- ══ Export ══ -->
+    <div class="settings-card">
+      <div class="settings-card-header">
+        <div class="settings-card-icon">📤</div>
+        <div>
+          <div class="settings-card-title">Export <em>Bookings</em></div>
+          <div class="settings-card-sub">Download your complete bookings data for records, accounting, or analysis.</div>
+        </div>
+      </div>
+      <div class="settings-card-body">
+        <p style="font-size:0.88rem;color:var(--text-light);margin-bottom:18px;line-height:1.7;">
+          The CSV export includes every booking row: token, customer name, phone, service, date, time, status, price, and booking timestamp. Open it in Excel, Google Sheets, or any spreadsheet app.
+        </p>
+        <div class="btn-actions">
+          <a href="{{ url_for('admin_export_bookings') }}" class="btn btn-export">
+            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download CSV
+          </a>
+          <a href="{{ url_for('admin_bookings') }}" class="btn btn-outline">
+            <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            View Bookings Table
+          </a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('sidebarOverlay').classList.toggle('open');
+    document.getElementById('menuBtn').classList.toggle('open');
+  }
+  function closeSidebar() {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebarOverlay').classList.remove('open');
+    document.getElementById('menuBtn').classList.remove('open');
+  }
+
+  function fmt12(h, m) {
+    const suffix = h >= 12 ? 'PM' : 'AM';
+    const h12    = h % 12 || 12;
+    return `${h12}:${String(m).padStart(2,'0')} ${suffix}`;
+  }
+
+  function updatePreview() {
+    const openVal     = document.getElementById('openTime').value;
+    const closeVal    = document.getElementById('closeTime').value;
+    const intervalVal = parseInt(document.getElementById('slotInterval').value);
+    const txt         = document.getElementById('previewText');
+
+    if (!openVal || !closeVal) { txt.textContent = 'Enter both times above.'; return; }
+
+    const [oh, om] = openVal.split(':').map(Number);
+    const [ch, cm] = closeVal.split(':').map(Number);
+    const openMins  = oh * 60 + om;
+    const closeMins = ch * 60 + cm;
+
+    if (closeMins <= openMins) { txt.textContent = '⚠ Closing time must be after opening time.'; return; }
+
+    let count = 0;
+    for (let m = openMins; m <= closeMins; m += intervalVal) count++;
+
+    const firstSlot = fmt12(oh, om);
+    const lastMins  = closeMins - ((closeMins - openMins) % intervalVal);
+    const lastSlot  = fmt12(Math.floor(lastMins/60), lastMins%60);
+
+    txt.innerHTML = `Slots from <strong>${firstSlot}</strong> to <strong>${lastSlot}</strong> — <strong>${count} slots</strong> available every <strong>${intervalVal} min</strong>`;
+  }
+
+  updatePreview();
+</script>
+</body>
+</html>

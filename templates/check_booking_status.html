@@ -1,0 +1,577 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+  .status-wrapper {
+    display: flex; justify-content: center; align-items: flex-start;
+    min-height: 78vh; padding: 40px 20px;
+  }
+
+  .status-card {
+    background: var(--white); padding: 40px 44px;
+    border-radius: 24px; box-shadow: 0 8px 32px rgba(150,123,182,0.12);
+    border: 1px solid var(--pastel-lavender); max-width: 580px; width: 100%;
+  }
+
+  .card-icon {
+    width: 56px; height: 56px; border-radius: 50%;
+    background: linear-gradient(135deg, rgba(200,165,235,0.2), rgba(255,200,180,0.2));
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 18px; font-size: 1.5rem; position: relative;
+  }
+  .card-icon::after { content:''; position:absolute; inset:-4px; border-radius:50%; border:1.5px solid rgba(138,99,180,0.15); }
+
+  .status-card h2 { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 300; color: var(--dark-purple); margin-bottom: 6px; text-align: center; }
+  .status-card h2 em { font-style: italic; color: var(--royal-purple); }
+  .status-card > p { font-size: 0.88rem; color: var(--text-light); margin-bottom: 28px; text-align: center; line-height: 1.6; }
+
+  .alert { padding: 12px 16px; border-radius: 10px; margin-bottom: 20px; font-size: 0.88rem; font-weight: 500; display: flex; align-items: flex-start; gap: 8px; }
+  .alert svg { width:15px; height:15px; stroke:currentColor; fill:none; stroke-width:2; flex-shrink:0; margin-top:1px; }
+  .alert-error   { background:#fdf0f0; color:#c0392b; border:1px solid #f5c6c6; }
+  .alert-success { background:#f0faf4; color:#1e7e4a; border:1px solid #b7e4c7; }
+
+  .form-group { margin-bottom: 20px; }
+  .form-group label { display:block; font-size:0.72rem; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--dark-purple); opacity:0.75; margin-bottom:8px; }
+
+  .input-wrap { position: relative; }
+  .input-wrap svg { position:absolute; left:14px; top:50%; transform:translateY(-50%); width:17px; height:17px; stroke:var(--text-light); fill:none; stroke-width:1.8; pointer-events:none; }
+
+  .form-control { width:100%; padding:14px 16px 14px 44px; border:1.5px solid rgba(138,99,180,0.15); border-radius:12px; font-family:'Quicksand',sans-serif; font-size:0.95rem; color:var(--text-dark); background:rgba(250,248,253,0.8); outline:none; transition:border-color 0.3s, box-shadow 0.3s; box-sizing:border-box; }
+  .form-control:focus { border-color:var(--royal-purple); box-shadow:0 0 0 3px rgba(138,99,180,0.1); background:#fff; }
+
+  .hint-text { font-size:0.76rem; color:var(--text-light); margin-top:7px; display:flex; align-items:center; gap:5px; }
+
+  .btn-primary { width:100%; display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:14px; border-radius:50px; font-family:'Quicksand',sans-serif; font-size:0.82rem; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; background:linear-gradient(135deg, var(--royal-purple), var(--dark-purple)); color:#fff; border:none; cursor:pointer; transition:all 0.3s; box-shadow:0 6px 20px rgba(138,99,180,0.28); margin-top:8px; }
+  .btn-primary:hover { transform:translateY(-2px); box-shadow:0 10px 28px rgba(138,99,180,0.38); }
+  .btn-primary svg { width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:2; }
+
+  /* ── Result cards ── */
+  .result-section { margin-top: 30px; }
+
+  .result-session { border:1px solid var(--pastel-lavender); border-radius:18px; overflow:hidden; margin-bottom:20px; animation: cardIn 0.4s cubic-bezier(0.22,1,0.36,1) both; }
+  @keyframes cardIn { from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);} }
+
+  .session-header { background:linear-gradient(135deg,rgba(138,99,180,0.07),rgba(200,180,240,0.07)); padding:16px 20px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; border-bottom:1px solid var(--pastel-lavender); }
+  .session-token { font-family:'Cormorant Garamond',serif; font-size:1.4rem; font-weight:600; color:var(--dark-purple); letter-spacing:0.12em; }
+
+  .status-badge { display:inline-block; padding:5px 14px; border-radius:50px; font-size:0.72rem; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; }
+  .status-pending   { background:#fff8e1; color:#f59e0b; border:1px solid #fde68a; }
+  .status-confirmed { background:#f0faf4; color:#16a34a; border:1px solid #bbf7d0; }
+  .status-completed { background:#eff6ff; color:#2563eb; border:1px solid #bfdbfe; }
+  .status-cancelled { background:#fdf0f0; color:#dc2626; border:1px solid #fecaca; }
+
+  .session-services { padding:12px 20px 6px; border-bottom:1px solid rgba(150,123,182,0.07); }
+  .session-services-label { font-size:0.62rem; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--text-light); margin-bottom:8px; }
+
+  .service-pill { display:inline-flex; align-items:center; gap:6px; background:rgba(138,99,180,0.07); border:1px solid rgba(138,99,180,0.14); border-radius:50px; padding:5px 12px; font-size:0.8rem; font-weight:600; color:var(--dark-purple); margin:0 6px 8px 0; }
+  .service-pill-dot { width:6px; height:6px; border-radius:50%; background:var(--royal-purple); flex-shrink:0; }
+
+  .info-row { display:flex; justify-content:space-between; align-items:center; padding:11px 20px; border-bottom:1px solid rgba(150,123,182,0.07); font-size:0.87rem; }
+  .info-row:last-child { border-bottom:none; }
+  .info-label { color:var(--text-light); font-weight:600; }
+  .info-value { color:var(--text-dark); font-weight:500; text-align:right; }
+
+  /* ── Action bar ── */
+  .action-bar {
+    display:flex; align-items:center; justify-content:space-between;
+    flex-wrap: wrap; gap: 8px;
+    padding:12px 20px; background:#faf8fd;
+    border-top:1px solid var(--pastel-lavender);
+  }
+  .action-bar-left  { display:flex; gap:8px; flex-wrap:wrap; }
+  .action-bar-right { display:flex; gap:8px; flex-wrap:wrap; }
+
+  .btn-action {
+    display:inline-flex; align-items:center; gap:6px;
+    padding:8px 16px; border-radius:50px; cursor:pointer; border:none;
+    font-family:'Quicksand',sans-serif; font-size:0.74rem; font-weight:700;
+    letter-spacing:0.8px; text-transform:uppercase; transition:all 0.25s;
+  }
+  .btn-action svg { width:13px; height:13px; stroke:currentColor; fill:none; stroke-width:2; }
+
+  .btn-reschedule { background:rgba(138,99,180,0.1); color:var(--royal-purple); border:1px solid rgba(138,99,180,0.2); }
+  .btn-reschedule:hover { background:var(--royal-purple); color:#fff; border-color:var(--royal-purple); }
+
+  .btn-cancel { background:rgba(220,38,38,0.07); color:#dc2626; border:1px solid rgba(220,38,38,0.18); }
+  .btn-cancel:hover { background:#dc2626; color:#fff; border-color:#dc2626; }
+
+  .btn-download { background:linear-gradient(135deg,var(--royal-purple),var(--dark-purple)); color:#fff; box-shadow:0 4px 14px rgba(138,99,180,0.28); }
+  .btn-download:hover { transform:translateY(-1px); box-shadow:0 8px 22px rgba(138,99,180,0.38); }
+
+  .back-link { display:flex; align-items:center; justify-content:center; gap:6px; margin-top:22px; font-size:0.85rem; font-weight:600; color:var(--text-light); text-decoration:none; transition:color 0.2s; }
+  .back-link svg { width:14px; height:14px; stroke:currentColor; fill:none; stroke-width:2.5; }
+  .back-link:hover { color:var(--royal-purple); }
+
+  /* ── Modals ── */
+  .modal-overlay {
+    position:fixed; inset:0; background:rgba(30,15,50,0.45);
+    backdrop-filter:blur(4px); z-index:2000;
+    display:flex; align-items:center; justify-content:center; padding:20px;
+    opacity:0; pointer-events:none; transition:opacity 0.3s;
+  }
+  .modal-overlay.open { opacity:1; pointer-events:all; }
+
+  .modal {
+    background:#fff; border-radius:20px; padding:32px 30px;
+    max-width:440px; width:100%;
+    box-shadow:0 20px 60px rgba(74,45,111,0.22);
+    transform:translateY(16px) scale(0.97);
+    transition:transform 0.35s cubic-bezier(0.22,1,0.36,1), opacity 0.3s;
+    opacity:0;
+  }
+  .modal-overlay.open .modal { transform:translateY(0) scale(1); opacity:1; }
+
+  .modal-icon { font-size:2rem; text-align:center; margin-bottom:12px; }
+  .modal-title { font-family:'Cormorant Garamond',serif; font-size:1.6rem; font-weight:300; color:var(--dark-purple); text-align:center; margin-bottom:6px; }
+  .modal-title em { font-style:italic; color:var(--royal-purple); }
+  .modal-sub { font-size:0.84rem; color:var(--text-light); text-align:center; margin-bottom:24px; line-height:1.6; }
+
+  .modal-token-preview { background:rgba(138,99,180,0.06); border:1px solid rgba(138,99,180,0.15); border-radius:10px; padding:10px 16px; text-align:center; margin-bottom:20px; font-family:'Cormorant Garamond',serif; font-size:1.3rem; font-weight:600; color:var(--dark-purple); letter-spacing:0.1em; }
+
+  .modal-label { font-size:0.7rem; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--dark-purple); opacity:0.7; margin-bottom:7px; display:block; }
+
+  .modal-input { width:100%; padding:11px 14px; border:1.5px solid rgba(138,99,180,0.18); border-radius:10px; font-family:'Quicksand',sans-serif; font-size:0.95rem; color:var(--text-dark); background:#faf8fd; outline:none; transition:border-color 0.3s, box-shadow 0.3s; box-sizing:border-box; margin-bottom:14px; }
+  .modal-input:focus { border-color:var(--royal-purple); box-shadow:0 0 0 3px rgba(138,99,180,0.1); background:#fff; }
+
+  /* Slot picker inside modal */
+  .modal-slot-placeholder { border:1.5px dashed rgba(138,99,180,0.2); border-radius:10px; padding:14px; text-align:center; color:var(--text-light); font-size:0.82rem; background:#faf8fd; margin-bottom:14px; }
+
+  .modal-slot-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-bottom:14px; }
+
+  .slot-btn { padding:8px 4px; border-radius:8px; text-align:center; font-family:'Quicksand',sans-serif; font-size:0.74rem; font-weight:700; cursor:pointer; border:1.5px solid rgba(138,99,180,0.2); background:#faf8fd; color:var(--dark-purple); transition:all 0.2s; white-space:nowrap; }
+  .slot-btn:hover:not(.slot-booked):not(.slot-selected) { border-color:var(--royal-purple); background:rgba(138,99,180,0.07); color:var(--royal-purple); }
+  .slot-btn.slot-selected { background:linear-gradient(135deg,var(--royal-purple),var(--dark-purple)); border-color:transparent; color:#fff; box-shadow:0 4px 12px rgba(138,99,180,0.3); }
+  .slot-btn.slot-booked { background:#f5f5f5; border-color:#e0e0e0; color:#ccc; cursor:not-allowed; text-decoration:line-through; }
+
+  .slot-loading-m { text-align:center; padding:14px; color:var(--text-light); font-size:0.82rem; display:flex; align-items:center; justify-content:center; gap:8px; }
+  .slot-loading-m svg { width:15px; height:15px; stroke:var(--royal-purple); fill:none; stroke-width:2; animation:spin 1s linear infinite; }
+  @keyframes spin { to{transform:rotate(360deg);} }
+
+  .modal-actions { display:flex; gap:10px; margin-top:4px; }
+  .modal-btn { flex:1; padding:12px; border-radius:50px; font-family:'Quicksand',sans-serif; font-size:0.78rem; font-weight:700; letter-spacing:1px; text-transform:uppercase; cursor:pointer; transition:all 0.25s; border:none; }
+  .modal-btn-primary { background:linear-gradient(135deg,var(--royal-purple),var(--dark-purple)); color:#fff; box-shadow:0 5px 16px rgba(138,99,180,0.28); }
+  .modal-btn-primary:hover { transform:translateY(-1px); }
+  .modal-btn-ghost { background:transparent; color:var(--text-light); border:1.5px solid rgba(138,99,180,0.18); }
+  .modal-btn-ghost:hover { color:var(--dark-purple); border-color:rgba(138,99,180,0.35); }
+  .modal-btn-danger { background:linear-gradient(135deg,#ef4444,#dc2626); color:#fff; box-shadow:0 5px 16px rgba(220,38,38,0.25); }
+  .modal-btn-danger:hover { transform:translateY(-1px); }
+
+  @media (max-width:480px) {
+    .status-card { padding:28px 18px; }
+    .info-row { flex-direction:column; align-items:flex-start; gap:3px; }
+    .session-header { flex-direction:column; align-items:flex-start; }
+    .action-bar { flex-direction:column; align-items:stretch; }
+    .action-bar-left, .action-bar-right { justify-content:stretch; }
+    .btn-action { justify-content:center; }
+    .modal { padding:24px 18px; }
+    .modal-slot-grid { grid-template-columns:repeat(3,1fr); }
+  }
+</style>
+
+<div class="status-wrapper">
+  <div class="status-card">
+
+    <div class="card-icon">🔍</div>
+    <h2>Check <em>Status</em></h2>
+    <p>Enter your Booking ID <strong>or</strong> your mobile number — either one works.</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">
+            {% if category == 'error' %}
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            {% else %}
+              <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            {% endif %}
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    {% if error %}
+      <div class="alert alert-error">{{ error }}</div>
+    {% endif %}
+
+    <form method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <div class="form-group">
+        <label>Booking ID or Mobile Number</label>
+        <div class="input-wrap">
+          <input type="text" name="query" class="form-control"
+                 placeholder="e.g.  LUM-A3F9K2  or  9876543210"
+                 value="{{ request.form.get('query', '') }}"
+                 autocomplete="off" required/>
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </div>
+        <p class="hint-text">
+          <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:var(--royal-purple);fill:none;stroke-width:2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          You can use either — no need to enter both
+        </p>
+      </div>
+      <button type="submit" class="btn-primary">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Find My Booking
+      </button>
+    </form>
+
+    {% if bookings %}
+      {% set ns = namespace(seen=[]) %}
+      <div class="result-section">
+
+        {% for b in bookings %}
+          {% if b.booking_token not in ns.seen %}
+            {% set _ = ns.seen.append(b.booking_token) %}
+            {% set session_rows = bookings | selectattr("booking_token","equalto",b.booking_token) | list %}
+            {% set service_names = session_rows | map(attribute="service") | map(attribute="name") | join(", ") %}
+            {% set can_act = b.status in ['pending', 'confirmed'] %}
+
+            <div class="result-session">
+
+              <div class="session-header">
+                <div>
+                  <div style="font-size:0.62rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-light);margin-bottom:4px;">Booking ID</div>
+                  <div class="session-token">{{ b.booking_token }}</div>
+                </div>
+                <span class="status-badge status-{{ b.status }}">{{ b.status }}</span>
+              </div>
+
+              <div class="session-services">
+                <div class="session-services-label">Services</div>
+                {% for row in session_rows %}
+                  <span class="service-pill"><span class="service-pill-dot"></span>{{ row.service.name }}</span>
+                {% endfor %}
+              </div>
+
+              <div class="info-row"><span class="info-label">Name</span><span class="info-value">{{ b.name or "—" }}</span></div>
+              <div class="info-row"><span class="info-label">Phone</span><span class="info-value">{{ b.phone or "—" }}</span></div>
+              <div class="info-row"><span class="info-label">Date</span><span class="info-value">{{ b.date.strftime("%A, %d %B %Y") if b.date else "—" }}</span></div>
+              <div class="info-row"><span class="info-label">Time</span><span class="info-value">{{ b.time.strftime("%I:%M %p") if b.time else "—" }}</span></div>
+              <div class="info-row"><span class="info-label">Booked On</span><span class="info-value">{{ b.created_at.strftime("%d %b %Y, %I:%M %p") if b.created_at else "—" }}</span></div>
+
+              <div class="action-bar">
+                <div class="action-bar-left">
+                  {% if can_act %}
+                  {% set b_time_hm = b.time.strftime('%H:%M') if b.time else '' %}
+                  <button class="btn-action btn-reschedule"
+                    data-token="{{ b.booking_token }}"
+                    data-date="{{ b.date }}"
+                    data-time="{{ b_time_hm }}"
+                    onclick="openReschedule(this.dataset.token, this.dataset.date, this.dataset.time)">
+                    <svg viewBox="0 0 24 24"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                    Reschedule
+                  </button>
+                  <button class="btn-action btn-cancel"
+                    data-token="{{ b.booking_token }}"
+                    onclick="openCancel(this.dataset.token)">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                    Cancel
+                  </button>
+                  {% endif %}
+                </div>
+                <div class="action-bar-right">
+                  <button class="btn-action btn-download"
+                    data-token="{{ b.booking_token }}"
+                    data-status="{{ b.status }}"
+                    data-services="{{ service_names }}"
+                    data-name="{{ b.name or '' }}"
+                    data-phone="{{ b.phone or '' }}"
+                    data-date="{{ b.date.strftime('%A, %d %B %Y') if b.date else '' }}"
+                    data-time="{{ b.time.strftime('%I:%M %p') if b.time else '' }}"
+                    data-bookedon="{{ b.created_at.strftime('%d %b %Y, %I:%M %p') if b.created_at else '' }}"
+                    onclick="downloadReceipt(this)">
+                    <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Receipt
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          {% endif %}
+        {% endfor %}
+
+      </div>
+    {% endif %}
+
+    <a href="{{ url_for('home') }}" class="back-link">
+      <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"/></svg>
+      Back to Home
+    </a>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     CANCEL MODAL
+══════════════════════════════════════ -->
+<div class="modal-overlay" id="cancelOverlay" onclick="closeModal('cancelOverlay')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-icon">⚠️</div>
+    <div class="modal-title">Cancel <em>Booking?</em></div>
+    <p class="modal-sub">This cannot be undone. Your appointment slot will be released.</p>
+    <div class="modal-token-preview" id="cancelTokenDisplay">—</div>
+    <form method="POST" action="{{ url_for('cancel_booking') }}" id="cancelForm">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <input type="hidden" name="token" id="cancelTokenInput"/>
+      <div class="modal-actions">
+        <button type="button" class="modal-btn modal-btn-ghost" onclick="closeModal('cancelOverlay')">Keep It</button>
+        <button type="submit" class="modal-btn modal-btn-danger">Yes, Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     RESCHEDULE MODAL
+══════════════════════════════════════ -->
+<div class="modal-overlay" id="rescheduleOverlay" onclick="closeModal('rescheduleOverlay')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-icon">📅</div>
+    <div class="modal-title">Reschedule <em>Appointment</em></div>
+    <p class="modal-sub">Choose a new date and time for your booking.</p>
+    <div class="modal-token-preview" id="rescheduleTokenDisplay">—</div>
+    <form method="POST" action="{{ url_for('reschedule_booking') }}" id="rescheduleForm" onsubmit="return validateReschedule()">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <input type="hidden" name="token" id="rescheduleTokenInput"/>
+
+      <label class="modal-label">New Date</label>
+      <input type="date" name="new_date" id="rescheduleDateInput" class="modal-input"
+             min="{{ today }}" onchange="loadRescheduleSlots()" required/>
+
+      <label class="modal-label">New Time Slot</label>
+      <div id="rescheduleSlotPlaceholder" class="modal-slot-placeholder">Pick a date first</div>
+      <div id="rescheduleSlotGrid" class="modal-slot-grid" style="display:none;"></div>
+      <input type="text" name="new_time" id="rescheduleTimeInput" style="display:none;" required/>
+
+      <div class="modal-actions">
+        <button type="button" class="modal-btn modal-btn-ghost" onclick="closeModal('rescheduleOverlay')">Cancel</button>
+        <button type="submit" class="modal-btn modal-btn-primary">Confirm Reschedule</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+/* ── Modal helpers ── */
+let rescheduleToken = '';
+let rescheduleSelectedTime = '';
+
+function openModal(id)  { document.getElementById(id).classList.add('open'); document.body.style.overflow='hidden'; }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); document.body.style.overflow=''; }
+
+function openCancel(token) {
+  document.getElementById('cancelTokenDisplay').textContent = token;
+  document.getElementById('cancelTokenInput').value = token;
+  openModal('cancelOverlay');
+}
+
+function openReschedule(token, currentDate, currentTime) {
+  rescheduleToken = token;
+  rescheduleSelectedTime = '';
+  document.getElementById('rescheduleTokenDisplay').textContent = token;
+  document.getElementById('rescheduleTokenInput').value = token;
+  // Pre-fill current date
+  const di = document.getElementById('rescheduleDateInput');
+  di.value = currentDate;
+  // Reset slot UI
+  document.getElementById('rescheduleSlotGrid').style.display = 'none';
+  document.getElementById('rescheduleSlotPlaceholder').style.display = 'block';
+  document.getElementById('rescheduleSlotPlaceholder').textContent = 'Pick a date first';
+  document.getElementById('rescheduleTimeInput').value = '';
+  openModal('rescheduleOverlay');
+  // Auto-load slots for current date
+  if (currentDate) loadRescheduleSlots(currentTime);
+}
+
+/* ── Slot helpers ── */
+let SLOT_START = 10 * 60;
+let SLOT_END   = 19 * 60 + 30;
+let SLOT_STEP  = 30;
+
+async function ensureSettings() {
+  try {
+    const data = await fetch('/api/salon_settings').then(r => r.json());
+    const [oh, om] = data.open_time.split(':').map(Number);
+    const [ch, cm] = data.close_time.split(':').map(Number);
+    SLOT_START = oh * 60 + om;
+    SLOT_END   = ch * 60 + cm;
+    SLOT_STEP  = data.slot_interval;
+  } catch(_) {}
+}
+
+function allSlots() {
+  const s = [];
+  for (let m = SLOT_START; m <= SLOT_END; m += SLOT_STEP) {
+    const h = String(Math.floor(m/60)).padStart(2,'0');
+    const n = String(m%60).padStart(2,'0');
+    s.push(`${h}:${n}`);
+  }
+  return s;
+}
+
+function fmt12(t) {
+  const [h,m] = t.split(':').map(Number);
+  return `${h%12||12}:${String(m).padStart(2,'0')} ${h>=12?'PM':'AM'}`;
+}
+
+async function loadRescheduleSlots(preselect) {
+  const dateVal = document.getElementById('rescheduleDateInput').value;
+  if (!dateVal) return;
+
+  await ensureSettings();
+
+  const placeholder = document.getElementById('rescheduleSlotPlaceholder');
+  const grid        = document.getElementById('rescheduleSlotGrid');
+
+  placeholder.style.display = 'none';
+  grid.style.display        = 'grid';
+  grid.innerHTML = `<div class="slot-loading-m" style="grid-column:1/-1;">
+    <svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Loading…
+  </div>`;
+
+  let bookedTimes = [];
+  let dayBlocked  = false;
+  let blockReason = '';
+  try {
+    const url = `/api/booked_slots?date=${dateVal}&exclude=${rescheduleToken}`;
+    const data = await fetch(url).then(r=>r.json());
+    dayBlocked  = data.blocked || false;
+    blockReason = data.reason  || 'Salon closed';
+    bookedTimes = data.booked_times || [];
+  } catch(_) {}
+
+  if (dayBlocked) {
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:14px;color:#dc2626;font-weight:600;font-size:0.82rem;">
+      🚫 ${blockReason}
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = '';
+  allSlots().forEach(slot => {
+    const isBooked   = bookedTimes.includes(slot);
+    const isSelected = (preselect || rescheduleSelectedTime) === slot;
+    const btn = document.createElement('button');
+    btn.type        = 'button';
+    btn.textContent = fmt12(slot);
+    btn.className   = 'slot-btn' + (isBooked?' slot-booked':'') + (isSelected?' slot-selected':'');
+    if (!isBooked) btn.addEventListener('click', () => selectRescheduleSlot(slot));
+    grid.appendChild(btn);
+  });
+
+  if (preselect) selectRescheduleSlot(preselect);
+}
+
+function selectRescheduleSlot(slot) {
+  rescheduleSelectedTime = slot;
+  document.getElementById('rescheduleTimeInput').value = slot;
+  document.querySelectorAll('#rescheduleSlotGrid .slot-btn').forEach(btn => {
+    btn.classList.toggle('slot-selected', btn.textContent === fmt12(slot));
+  });
+}
+
+function validateReschedule() {
+  if (!document.getElementById('rescheduleTimeInput').value) {
+    alert('Please select a new time slot.');
+    return false;
+  }
+  return true;
+}
+
+/* ── PDF Receipt (jsPDF) ── */
+function downloadReceipt(btn) {
+  const token    = btn.dataset.token;
+  const status   = btn.dataset.status;
+  const name     = btn.dataset.name    || '—';
+  const phone    = btn.dataset.phone   || '—';
+  const date     = btn.dataset.date    || '—';
+  const time     = btn.dataset.time    || '—';
+  const bookedOn = btn.dataset.bookedon|| '—';
+  const services = btn.dataset.services.split(',').map(s=>s.trim());
+
+  const { jsPDF }   = window.jspdf;
+  const doc         = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+  const W           = doc.internal.pageSize.getWidth();
+  const pageH       = doc.internal.pageSize.getHeight();
+  const purple=[74,45,111], violet=[138,99,180], light=[156,138,172], dark=[45,32,53], white=[255,255,255];
+  const sColor={pending:[245,158,11],confirmed:[22,163,74],completed:[37,99,235],cancelled:[220,38,38]};
+  const sc = sColor[status]||sColor.pending;
+
+  let y=0;
+
+  // Header
+  doc.setFillColor(...purple); doc.rect(0,0,W,42,'F');
+  doc.setTextColor(...white); doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setCharSpace(3);
+  doc.text('BOOKING RECEIPT',W/2,11,{align:'center'}); doc.setCharSpace(0);
+  doc.setFont('helvetica','bold'); doc.setFontSize(22); doc.setCharSpace(6);
+  doc.text('LUMIERE',W/2,24,{align:'center'}); doc.setCharSpace(0);
+  doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setCharSpace(2.5);
+  doc.setTextColor(200,180,230); doc.text('LUXURY HAIR SALON',W/2,32,{align:'center'}); doc.setCharSpace(0);
+  doc.setDrawColor(201,169,110); doc.setLineWidth(0.5); doc.line(20,0.4,W-20,0.4);
+  y=52;
+
+  // Token box
+  doc.setFillColor(245,240,252); doc.setDrawColor(200,175,230); doc.setLineWidth(0.4);
+  doc.roundedRect(15,y-6,W-30,28,4,4,'FD');
+  doc.setTextColor(...light); doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setCharSpace(2);
+  doc.text('BOOKING ID',W/2,y+1,{align:'center'}); doc.setCharSpace(0);
+  doc.setTextColor(...purple); doc.setFont('helvetica','bold'); doc.setFontSize(20); doc.setCharSpace(4);
+  doc.text(token,W/2,y+10,{align:'center'}); doc.setCharSpace(0);
+  const bTxt=status.toUpperCase(); const bw=doc.getTextWidth(bTxt)+10; const bx=(W-bw)/2;
+  doc.setFontSize(8); doc.setFillColor(245,240,252); doc.setDrawColor(...sc); doc.setLineWidth(0.5);
+  doc.roundedRect(bx,y+13,bw,7,2,2,'FD');
+  doc.setTextColor(...sc); doc.setFontSize(7); doc.setCharSpace(1);
+  doc.text(bTxt,W/2,y+18.5,{align:'center'}); doc.setCharSpace(0);
+  y+=34;
+
+  // Dashed divider
+  doc.setDrawColor(210,195,230); doc.setLineWidth(0.3); doc.setLineDashPattern([1.5,1.5],0);
+  doc.line(15,y,W-15,y); doc.setLineDashPattern([],0); y+=8;
+
+  // Services
+  doc.setTextColor(...light); doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setCharSpace(2);
+  doc.text('SERVICES BOOKED',15,y); doc.setCharSpace(0);
+  doc.setDrawColor(...violet); doc.setLineWidth(0.4); doc.line(15,y+1.5,55,y+1.5); y+=7;
+  services.forEach((s,i)=>{
+    if(i%2===0){doc.setFillColor(249,246,253);doc.rect(15,y-4,W-30,9,'F');}
+    doc.setFillColor(...violet); doc.circle(19.5,y+0.3,1.3,'F');
+    doc.setTextColor(...dark); doc.setFont('helvetica','bold'); doc.setFontSize(9);
+    doc.text(s,24,y+1);
+    doc.setDrawColor(230,220,242); doc.setLineWidth(0.2); doc.line(15,y+5,W-15,y+5);
+    y+=9;
+  });
+  y+=4;
+
+  // Solid divider
+  doc.setDrawColor(220,208,235); doc.setLineWidth(0.3); doc.line(15,y,W-15,y); y+=8;
+
+  // Details
+  doc.setTextColor(...light); doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setCharSpace(2);
+  doc.text('APPOINTMENT DETAILS',15,y); doc.setCharSpace(0);
+  doc.setDrawColor(...violet); doc.setLineWidth(0.4); doc.line(15,y+1.5,65,y+1.5); y+=7;
+  [['Customer Name',name],['Phone Number',phone],['Date',date],['Time',time],['Booked On',bookedOn]].forEach(([l,v],i)=>{
+    if(i%2===0){doc.setFillColor(249,246,253);doc.rect(15,y-4,W-30,8.5,'F');}
+    doc.setTextColor(...light); doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.text(l,19,y+0.8);
+    doc.setTextColor(...dark); doc.setFont('helvetica','bold'); doc.text(String(v),W-17,y+0.8,{align:'right'});
+    doc.setDrawColor(230,220,242); doc.setLineWidth(0.2); doc.line(15,y+4.5,W-15,y+4.5);
+    y+=8.5;
+  });
+
+  // Footer
+  doc.setFillColor(250,248,253); doc.setDrawColor(220,208,235); doc.setLineWidth(0.3);
+  doc.rect(0,pageH-30,W,30,'FD');
+  doc.setDrawColor(201,169,110); doc.setLineWidth(0.5); doc.line(0,pageH-30,W,pageH-30);
+  doc.setTextColor(...light); doc.setFont('helvetica','normal'); doc.setFontSize(8.5);
+  doc.text('Please arrive 10 minutes before your appointment.',W/2,pageH-21,{align:'center'});
+  doc.text('Show this receipt at the salon counter.',W/2,pageH-15,{align:'center'});
+  doc.setTextColor(180,160,205); doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setCharSpace(2);
+  doc.text('LUMIERE — LUXURY HAIR SALON',W/2,pageH-7,{align:'center'}); doc.setCharSpace(0);
+
+  doc.save(`Lumiere-Receipt-${token}.pdf`);
+}
+</script>
+
+{% endblock %}

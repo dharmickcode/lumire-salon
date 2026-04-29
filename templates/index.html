@@ -1,0 +1,610 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<style>
+  /* ========== IMPORTS ========== */
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Quicksand:wght@400;500;600&display=swap');
+
+  /* ========== CSS VARIABLES ========== */
+  :root {
+    --hero-h: 92vh;
+  }
+
+  /* ========== HERO ========== */
+  .hero {
+    position: relative;
+    height: var(--hero-h);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background: var(--pastel-lavender, #ede0f7);
+  }
+
+  /* layered background */
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 70% 60% at 80% 20%, rgba(200,170,240,0.45) 0%, transparent 65%),
+      radial-gradient(ellipse 55% 50% at 10% 80%, rgba(255,210,190,0.4) 0%, transparent 60%),
+      linear-gradient(145deg, #f5eeff 0%, #fce8df 100%);
+    z-index: 0;
+  }
+
+  /* subtle noise grain */
+  .hero::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    background-size: 200px 200px;
+    opacity: 0.4;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* large decorative circle */
+  .hero-orb {
+    position: absolute;
+    width: 520px;
+    height: 520px;
+    border-radius: 50%;
+    border: 1px solid rgba(150,110,200,0.12);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    animation: orbPulse 7s ease-in-out infinite;
+    z-index: 1;
+  }
+
+  .hero-orb::before {
+    content: '';
+    position: absolute;
+    inset: 30px;
+    border-radius: 50%;
+    border: 1px solid rgba(150,110,200,0.1);
+  }
+
+  @keyframes orbPulse {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.6; }
+    50%       { transform: translate(-50%, -50%) scale(1.04); opacity: 1; }
+  }
+
+  /* floating petals */
+  .petal {
+    position: absolute;
+    border-radius: 50% 0 50% 0;
+    opacity: 0;
+    animation: floatPetal linear infinite;
+    z-index: 1;
+  }
+  .petal:nth-child(1)  { width:8px;  height:12px; background:rgba(200,150,220,0.35); left:15%;  animation-duration:12s; animation-delay:0s;   top:-20px; }
+  .petal:nth-child(2)  { width:6px;  height:10px; background:rgba(240,180,160,0.3);  left:35%;  animation-duration:15s; animation-delay:3s;   top:-20px; }
+  .petal:nth-child(3)  { width:10px; height:14px; background:rgba(180,140,210,0.3);  left:60%;  animation-duration:11s; animation-delay:6s;   top:-20px; }
+  .petal:nth-child(4)  { width:7px;  height:11px; background:rgba(255,200,180,0.3);  left:80%;  animation-duration:14s; animation-delay:1s;   top:-20px; }
+  .petal:nth-child(5)  { width:9px;  height:13px; background:rgba(190,155,225,0.25); left:50%;  animation-duration:13s; animation-delay:8s;   top:-20px; }
+
+  @keyframes floatPetal {
+    0%   { transform: translateY(0)   rotate(0deg);   opacity: 0; }
+    10%  { opacity: 0.8; }
+    90%  { opacity: 0.5; }
+    100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+  }
+
+  /* content */
+  .hero-inner {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    padding: 0 24px;
+    animation: heroFadeUp 1s cubic-bezier(0.22,1,0.36,1) both;
+  }
+
+  @keyframes heroFadeUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .hero-eyebrow {
+    font-family: 'Quicksand', sans-serif;
+    font-size: 0.75rem;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--royal-purple, #8a63b4);
+    margin-bottom: 18px;
+    opacity: 0.8;
+  }
+
+  .hero-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(3rem, 8vw, 6.5rem);
+    font-weight: 300;
+    line-height: 1.05;
+    color: var(--dark-purple, #4a2d6f);
+    margin-bottom: 6px;
+    letter-spacing: 0.04em;
+  }
+
+  .hero-title em {
+    font-style: italic;
+    color: var(--royal-purple, #8a63b4);
+  }
+
+  .hero-divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin: 20px auto;
+  }
+
+  .hero-divider span {
+    display: block;
+    width: 60px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--royal-purple, #8a63b4));
+  }
+
+  .hero-divider span:last-child {
+    background: linear-gradient(270deg, transparent, var(--royal-purple, #8a63b4));
+  }
+
+  .hero-divider i {
+    font-style: normal;
+    font-size: 0.6rem;
+    color: var(--royal-purple, #8a63b4);
+    letter-spacing: 3px;
+  }
+
+  .hero-sub {
+    font-family: 'Quicksand', sans-serif;
+    font-size: 1rem;
+    color: #7a6080;
+    max-width: 480px;
+    margin: 0 auto 38px;
+    line-height: 1.7;
+  }
+
+  .hero-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .btn-gold {
+    font-family: 'Quicksand', sans-serif;
+    font-size: 0.82rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-weight: 600;
+    padding: 14px 36px;
+    border-radius: 50px;
+    background: linear-gradient(135deg, var(--royal-purple, #8a63b4), var(--dark-purple, #4a2d6f));
+    color: #fff;
+    text-decoration: none;
+    transition: all 0.35s ease;
+    box-shadow: 0 6px 24px rgba(138,99,180,0.3);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-gold::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,0);
+    transition: background 0.3s;
+  }
+
+  .btn-gold:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 32px rgba(138,99,180,0.4);
+  }
+
+  .btn-ghost {
+    font-family: 'Quicksand', sans-serif;
+    font-size: 0.82rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-weight: 600;
+    padding: 13px 34px;
+    border-radius: 50px;
+    border: 1.5px solid var(--royal-purple, #8a63b4);
+    color: var(--royal-purple, #8a63b4);
+    text-decoration: none;
+    transition: all 0.35s ease;
+    background: rgba(255,255,255,0.6);
+    backdrop-filter: blur(8px);
+  }
+
+  .btn-ghost:hover {
+    background: var(--royal-purple, #8a63b4);
+    color: #fff;
+    transform: translateY(-3px);
+    box-shadow: 0 10px 28px rgba(138,99,180,0.25);
+  }
+
+  /* scroll hint */
+  .scroll-hint {
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    opacity: 0.45;
+  }
+
+  .scroll-hint span {
+    font-family: 'Quicksand', sans-serif;
+    font-size: 0.65rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--dark-purple, #4a2d6f);
+  }
+
+  .scroll-line {
+    width: 1px;
+    height: 40px;
+    background: linear-gradient(to bottom, var(--royal-purple, #8a63b4), transparent);
+    animation: scrollDrop 1.8s ease-in-out infinite;
+  }
+
+  @keyframes scrollDrop {
+    0%, 100% { opacity: 0; transform: scaleY(0); transform-origin: top; }
+    50%       { opacity: 1; transform: scaleY(1); }
+  }
+
+
+  /* ========== SERVICES SECTION ========== */
+  .services-section {
+    padding: 90px 40px 100px;
+    background: #fff;
+    position: relative;
+  }
+
+  .services-section::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, var(--pastel-lavender, #ede0f7) 30%, var(--pastel-lavender, #ede0f7) 70%, transparent 100%);
+  }
+
+  .section-head {
+    text-align: center;
+    margin-bottom: 60px;
+  }
+
+  .section-eyebrow {
+    font-family: 'Quicksand', sans-serif;
+    font-size: 0.72rem;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--royal-purple, #8a63b4);
+    margin-bottom: 14px;
+    opacity: 0.75;
+  }
+
+  .section-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(2.2rem, 5vw, 3.4rem);
+    font-weight: 300;
+    color: var(--dark-purple, #4a2d6f);
+    margin-bottom: 12px;
+    line-height: 1.1;
+  }
+
+  .section-title em {
+    font-style: italic;
+    color: var(--royal-purple, #8a63b4);
+  }
+
+  .section-rule {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin: 16px 0 10px;
+  }
+
+  .section-rule::before,
+  .section-rule::after {
+    content: '';
+    display: block;
+    width: 50px;
+    height: 1px;
+    background: var(--pastel-lavender, #ede0f7);
+  }
+
+  .section-rule span {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--royal-purple, #8a63b4);
+    opacity: 0.5;
+  }
+
+  .section-subtitle {
+    font-family: 'Quicksand', sans-serif;
+    color: #9c8aac;
+    font-size: 0.95rem;
+  }
+
+  /* grid */
+  .services-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+    gap: 24px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  /* individual card */
+  .service-card {
+    position: relative;
+    background: #faf8fd;
+    border: 1px solid rgba(150,110,200,0.1);
+    border-radius: 20px;
+    padding: 34px 30px 30px;
+    transition: all 0.4s cubic-bezier(0.22,1,0.36,1);
+    cursor: default;
+    overflow: hidden;
+  }
+
+  .service-card::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 150px; height: 150px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(200,160,230,0.18), transparent 70%);
+    transition: transform 0.5s ease;
+  }
+
+  .service-card:hover {
+    transform: translateY(-6px);
+    border-color: rgba(138,99,180,0.25);
+    box-shadow: 0 16px 40px rgba(138,99,180,0.12);
+    background: #fff;
+  }
+
+  .service-card:hover::before {
+    transform: scale(1.4);
+  }
+
+  .service-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(200,165,235,0.3), rgba(255,200,180,0.3));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 18px;
+    font-size: 1.2rem;
+  }
+
+  .service-card h3 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.35rem;
+    font-weight: 600;
+    color: var(--dark-purple, #4a2d6f);
+    margin-bottom: 10px;
+    letter-spacing: 0.01em;
+  }
+
+  .service-card p {
+    font-family: 'Quicksand', sans-serif;
+    font-size: 0.88rem;
+    color: #8a7a96;
+    line-height: 1.65;
+    margin-bottom: 22px;
+  }
+
+  .service-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .service-price {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--royal-purple, #8a63b4);
+    letter-spacing: 0.01em;
+  }
+
+  .service-book-btn {
+    font-family: 'Quicksand', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--royal-purple, #8a63b4);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: gap 0.25s ease, color 0.25s ease;
+  }
+
+  .service-book-btn svg {
+    width: 13px;
+    height: 13px;
+    stroke: currentColor;
+    transition: transform 0.25s ease;
+  }
+
+  .service-book-btn:hover {
+    color: var(--dark-purple, #4a2d6f);
+    gap: 8px;
+  }
+
+  .service-book-btn:hover svg {
+    transform: translateX(2px);
+  }
+
+  /* ========== RESPONSIVE ========== */
+  @media (max-width: 768px) {
+    .hero-title { font-size: 2.8rem; }
+    .services-section { padding: 60px 20px 70px; }
+    .services-grid { grid-template-columns: 1fr; gap: 16px; }
+    .service-card { padding: 26px 22px 22px; }
+  }
+</style>
+
+<!-- ===== HERO ===== -->
+<section class="hero">
+  <!-- floating petals -->
+  <div class="petal"></div>
+  <div class="petal"></div>
+  <div class="petal"></div>
+  <div class="petal"></div>
+  <div class="petal"></div>
+
+  <div class="hero-orb"></div>
+
+  <div class="hero-inner">
+    <p class="hero-eyebrow">Where Hair Becomes Art</p>
+
+    <h1 class="hero-title">
+      L U M <em>I</em> È R E
+    </h1>
+
+    <div class="hero-divider">
+      <span></span>
+      <i>✦ ✦ ✦</i>
+      <span></span>
+    </div>
+
+    <p class="hero-sub">
+      Welcome to Lumière, a destination for couture color, precision styling, and transformative hair rituals.
+    </p>
+
+    <div class="hero-cta">
+      <a href="{{ url_for('book_appointment') }}" class="btn-gold">Book Appointment</a>
+      <a href="#services" class="btn-ghost">View Menu</a>
+    </div>
+  </div>
+
+  <div class="scroll-hint">
+    <span>Scroll</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+
+<!-- ===== SERVICES ===== -->
+<section id="services" class="services-section">
+  <div class="section-head">
+    <p class="section-eyebrow">What We Offer</p>
+    <h2 class="section-title">Our <em>Services</em></h2>
+    <div class="section-rule"><span></span></div>
+    <p class="section-subtitle">Luxury hair care tailored just for you</p>
+  </div>
+
+  <div class="services-grid">
+
+    <div class="service-card">
+      <div class="service-icon">✂️</div>
+      <h3>Haircut &amp; Style</h3>
+      <p>A precision cut tailored to your face shape, finished with a luxury wash and blow-dry.</p>
+      <div class="service-footer">
+       <!-- <span class="service-price">₹2,999</span> -->
+        <a href="{{ url_for('book_appointment') }}" class="service-book-btn">
+          Book
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+
+    <div class="service-card">
+      <div class="service-icon">🎨</div>
+      <h3>Balayage</h3>
+      <p>Hand-painted highlights for a natural, sun-kissed look. Includes toning and styling.</p>
+      <div class="service-footer">
+        <!-- <span class="service-price">₹19,500</span> -->
+        <a href="{{ url_for('book_appointment') }}" class="service-book-btn">
+          Book
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+
+    <div class="service-card">
+      <div class="service-icon">💎</div>
+      <h3>Keratin Treatment</h3>
+      <p>Frizz elimination treatment that leaves hair smooth, shiny, and manageable.</p>
+      <div class="service-footer">
+        <!--<span class="service-price">₹15,999</span> -->
+        <a href="{{ url_for('book_appointment') }}" class="service-book-btn">
+          Book
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+
+    <div class="service-card">
+      <div class="service-icon">🌸</div>
+      <h3>Hair Spa &amp; Massage</h3>
+      <p>Relaxing spa treatment with aroma oils to nourish your hair and scalp.</p>
+      <div class="service-footer">
+        <!--<span class="service-price">₹5,000</span>-->
+        <a href="{{ url_for('book_appointment') }}" class="service-book-btn">
+          Book
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+
+    <div class="service-card">
+      <div class="service-icon">✨</div>
+      <h3>Brazilian Blowout</h3>
+      <p>Advanced straightening treatment for silky smooth hair that lasts.</p>
+      <div class="service-footer">
+        <!--<span class="service-price">₹9,999</span>-->
+        <a href="{{ url_for('book_appointment') }}" class="service-book-btn">
+          Book
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+
+    <div class="service-card">
+      <div class="service-icon">👑</div>
+      <h3>Bridal Hair Styling</h3>
+      <p>Perfect wedding hairstyles for your special day. Includes trial and makeup.</p>
+      <div class="service-footer">
+        <!--<span class="service-price">₹12,999</span>-->
+        <a href="{{ url_for('book_appointment') }}" class="service-book-btn">
+          Book
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+{% endblock %}

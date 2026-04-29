@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h2 style="margin-bottom: 20px;">Hello, {{ name }} 👋</h2>
+
+{% if role == 'admin' %}
+  <div class="alert alert-info">
+    You are logged in as <b>Admin</b>
+  </div>
+
+  <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 20px;">
+    <a href="{{ url_for('add_service') }}" class="btn btn-primary">
+      Manage Services
+    </a>
+    <a href="{{ url_for('all_bookings') }}" class="btn btn-dark">
+      View All Bookings
+    </a>
+  </div>
+{% else %}
+  <div class="alert alert-success">
+    You are logged in as <b>User</b>
+  </div>
+
+  <a href="{{ url_for('my_bookings') }}" class="btn btn-info" style="margin-bottom: 20px;">
+    My Bookings
+  </a>
+{% endif %}
+
+<hr>
+
+<h3 style="margin-bottom: 20px;">Available Services</h3>
+
+<div class="services-grid">
+  {% for service in services %}
+    <div class="service-card">
+      <h4>{{ service.name }}</h4>
+      <p>⏱ {{ service.duration }} minutes</p>
+      <span class="service-price">₹{{ service.price }}</span>
+
+      {% if role == 'user' %}
+        <a href="{{ url_for('book_service', service_id=service.id) }}" 
+           class="btn btn-success" 
+           style="margin-top: 10px; width: 100%;">
+           Book Appointment
+        </a>
+      {% else %}
+        <p style="color: var(--text-light); font-size: 0.9rem; margin-top: 10px;">Admin view only</p>
+      {% endif %}
+    </div>
+  {% endfor %}
+</div>
+
+{% if services|length == 0 %}
+  <p style="text-align: center; color: var(--text-light);">No services available.</p>
+{% endif %}
+
+{% endblock %}

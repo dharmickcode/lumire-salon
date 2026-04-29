@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div style="display: flex; justify-content: center; align-items: center; min-height: 70vh; padding: 20px;">
+    <div style="background: var(--white); padding: 40px; border-radius: 20px; box-shadow: 0 8px 25px rgba(150, 123, 182, 0.1); border: 1px solid var(--pastel-lavender); max-width: 400px; width: 100%; text-align: center;">
+        
+        <h2 style="font-family: 'Playfair Display', serif; color: var(--dark-purple); margin-bottom: 10px;">Create Account</h2>
+        <p style="color: var(--text-light); margin-bottom: 30px;">Register to get started</p>
+
+        <form method="POST">
+            <div style="margin-bottom: 20px; text-align: left;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-dark);">Full Name</label>
+                <input type="text" name="name" style="width: 100%; padding: 12px 15px; border: 1px solid #e0e0e0; border-radius: 10px; font-family: 'Quicksand', sans-serif; font-size: 1rem;" placeholder="Enter your full name" required>
+            </div>
+
+            <div style="margin-bottom: 20px; text-align: left;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-dark);">Email Address</label>
+                <input type="email" name="email" style="width: 100%; padding: 12px 15px; border: 1px solid #e0e0e0; border-radius: 10px; font-family: 'Quicksand', sans-serif; font-size: 1rem;" placeholder="Enter your email" required>
+            </div>
+
+            <div style="margin-bottom: 20px; text-align: left;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-dark);">Password</label>
+                <input type="password" name="password" style="width: 100%; padding: 12px 15px; border: 1px solid #e0e0e0; border-radius: 10px; font-family: 'Quicksand', sans-serif; font-size: 1rem;" placeholder="Create a password" required>
+            </div>
+
+            <button type="submit" style="width: 100%; padding: 14px; background-color: var(--royal-purple); color: white; border: none; border-radius: 50px; font-weight: 600; font-size: 1rem; cursor: pointer; transition: all 0.3s ease; margin-top: 10px;">
+                Register
+            </button>
+        </form>
+
+        <p style="margin-top: 20px; color: var(--text-light);">
+            Already have an account? <a href="/login" style="color: var(--royal-purple); font-weight: 600;">Login here</a>
+        </p>
+        
+    </div>
+</div>
+
+{% endblock %}

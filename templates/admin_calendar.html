@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Calendar – Lumière Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --royal-purple:#8a63b4; --dark-purple:#4a2d6f; --text-light:#9c8aac; --text-dark:#2d2035; --sidebar-w:240px; }
+    body { font-family:'Quicksand',sans-serif; background:#f5f2fa; color:var(--text-dark); min-height:100vh; display:flex; }
+    a { text-decoration:none; color:inherit; }
+
+    /* Sidebar — same as other pages */
+    .sidebar { width:var(--sidebar-w); min-height:100vh; background:var(--dark-purple); display:flex; flex-direction:column; position:fixed; top:0; left:0; z-index:200; box-shadow:4px 0 24px rgba(74,45,111,0.18); transition:transform 0.35s cubic-bezier(0.22,1,0.36,1); }
+    .sidebar-logo { padding:28px 24px 20px; border-bottom:1px solid rgba(255,255,255,0.07); }
+    .sidebar-logo-name { font-family:'Cormorant Garamond',serif; font-size:1.3rem; font-weight:300; letter-spacing:0.2em; color:#fff; }
+    .sidebar-logo-name em { font-style:italic; color:rgba(200,165,235,0.9); }
+    .sidebar-logo-tag { font-size:0.58rem; letter-spacing:3px; text-transform:uppercase; color:rgba(255,255,255,0.3); margin-top:3px; }
+    .sidebar-badge { display:inline-block; margin-top:8px; font-size:0.6rem; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; background:rgba(138,99,180,0.35); color:rgba(200,165,235,0.9); padding:3px 8px; border-radius:50px; border:1px solid rgba(138,99,180,0.4); }
+    .sidebar-nav { flex:1; padding:20px 0; }
+    .sidebar-section { font-size:0.6rem; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:rgba(255,255,255,0.2); padding:14px 24px 8px; }
+    .sidebar-link { display:flex; align-items:center; gap:12px; padding:11px 24px; font-size:0.83rem; font-weight:600; color:rgba(255,255,255,0.5); transition:all 0.25s; border-left:3px solid transparent; }
+    .sidebar-link svg { width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:1.8; flex-shrink:0; }
+    .sidebar-link:hover { color:#fff; background:rgba(255,255,255,0.05); }
+    .sidebar-link.active { color:#fff; background:rgba(138,99,180,0.2); border-left-color:var(--royal-purple); }
+    .sidebar-footer { padding:20px 24px; border-top:1px solid rgba(255,255,255,0.07); }
+    .logout-btn { display:flex; align-items:center; gap:10px; font-size:0.8rem; font-weight:600; color:rgba(255,255,255,0.4); transition:color 0.2s; cursor:pointer; background:none; border:none; font-family:'Quicksand',sans-serif; width:100%; padding:0; }
+    .logout-btn svg { width:15px; height:15px; stroke:currentColor; fill:none; stroke-width:2; }
+    .logout-btn:hover { color:#ff8a8a; }
+    .sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(74,45,111,0.45); backdrop-filter:blur(3px); z-index:150; }
+    .sidebar-overlay.open { display:block; }
+
+    .mobile-topbar { display:none; position:fixed; top:0; left:0; right:0; height:60px; background:var(--dark-purple); z-index:100; align-items:center; justify-content:space-between; padding:0 18px; box-shadow:0 2px 16px rgba(74,45,111,0.25); }
+    .mobile-logo { font-family:'Cormorant Garamond',serif; font-size:1.15rem; font-weight:300; letter-spacing:0.2em; color:#fff; }
+    .mobile-logo em { font-style:italic; color:rgba(200,165,235,0.9); }
+    .mobile-topbar-right { display:flex; align-items:center; gap:8px; }
+    .mobile-logout-btn { display:flex; align-items:center; gap:6px; background:rgba(255,100,100,0.15); border:1px solid rgba(255,100,100,0.25); border-radius:8px; padding:7px 12px; cursor:pointer; font-family:'Quicksand',sans-serif; font-size:0.72rem; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:rgba(255,160,160,0.9); transition:all 0.25s; }
+    .mobile-logout-btn svg { width:14px; height:14px; stroke:currentColor; fill:none; stroke-width:2; }
+    .mobile-logout-btn:hover { background:rgba(220,60,60,0.3); color:#ffaaaa; }
+    .mobile-menu-btn { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); border-radius:8px; width:38px; height:38px; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-direction:column; gap:4px; padding:0; }
+    .mobile-menu-btn span { display:block; width:18px; height:2px; background:#fff; border-radius:2px; transition:all 0.3s ease; }
+    .mobile-menu-btn.open span:nth-child(1) { transform:translateY(6px) rotate(45deg); }
+    .mobile-menu-btn.open span:nth-child(2) { opacity:0; }
+    .mobile-menu-btn.open span:nth-child(3) { transform:translateY(-6px) rotate(-45deg); }
+
+    .main { margin-left:var(--sidebar-w); flex:1; display:flex; flex-direction:column; min-height:100vh; }
+    .topbar { background:#fff; border-bottom:1px solid rgba(138,99,180,0.1); padding:0 36px; height:64px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:50; }
+    .topbar-title { font-family:'Cormorant Garamond',serif; font-size:1.4rem; font-weight:400; color:var(--dark-purple); }
+    .topbar-title em { font-style:italic; color:var(--royal-purple); }
+    .topbar-right { display:flex; align-items:center; gap:12px; }
+    .admin-avatar { width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg,var(--royal-purple),var(--dark-purple)); display:flex; align-items:center; justify-content:center; font-size:0.78rem; font-weight:700; color:#fff; }
+    .admin-name { font-size:0.82rem; font-weight:600; color:var(--text-light); }
+
+    .page-content { padding:36px; flex:1; }
+
+    /* ── Calendar nav ── */
+    .cal-nav { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:12px; }
+    .cal-month-title { font-family:'Cormorant Garamond',serif; font-size:1.8rem; font-weight:300; color:var(--dark-purple); }
+    .cal-month-title em { font-style:italic; color:var(--royal-purple); }
+    .cal-nav-btns { display:flex; align-items:center; gap:8px; }
+    .nav-btn { display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border-radius:50px; font-family:'Quicksand',sans-serif; font-size:0.76rem; font-weight:700; letter-spacing:1px; text-transform:uppercase; cursor:pointer; border:1.5px solid rgba(138,99,180,0.2); background:transparent; color:var(--royal-purple); text-decoration:none; transition:all 0.25s; }
+    .nav-btn svg { width:14px; height:14px; stroke:currentColor; fill:none; stroke-width:2.5; }
+    .nav-btn:hover { background:var(--royal-purple); color:#fff; border-color:var(--royal-purple); }
+    .nav-btn.today-btn { background:linear-gradient(135deg,var(--royal-purple),var(--dark-purple)); color:#fff; border-color:transparent; box-shadow:0 4px 14px rgba(138,99,180,0.28); }
+    .nav-btn.today-btn:hover { transform:translateY(-1px); }
+
+    /* ── Legend ── */
+    .cal-legend { display:flex; align-items:center; gap:18px; margin-bottom:18px; flex-wrap:wrap; font-size:0.76rem; color:var(--text-light); font-weight:600; }
+    .legend-dot { width:10px; height:10px; border-radius:3px; flex-shrink:0; }
+    .legend-item { display:flex; align-items:center; gap:6px; }
+
+    /* ── Calendar grid ── */
+    .cal-wrap { background:#fff; border:1px solid rgba(138,99,180,0.1); border-radius:20px; overflow:hidden; }
+
+    .cal-header { display:grid; grid-template-columns:repeat(7,1fr); background:#faf8fd; border-bottom:1px solid rgba(138,99,180,0.08); }
+    .cal-dow { text-align:center; padding:12px 4px; font-size:0.62rem; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--text-light); }
+    .cal-dow.weekend { color:var(--royal-purple); }
+
+    .cal-body { display:flex; flex-direction:column; }
+    .cal-week { display:grid; grid-template-columns:repeat(7,1fr); border-bottom:1px solid rgba(138,99,180,0.05); }
+    .cal-week:last-child { border-bottom:none; }
+
+    .cal-day { min-height:100px; padding:8px; border-right:1px solid rgba(138,99,180,0.05); position:relative; transition:background 0.2s; }
+    .cal-day:last-child { border-right:none; }
+    .cal-day:hover { background:rgba(138,99,180,0.025); }
+
+    .cal-day.empty { background:#fdfbff; }
+    .cal-day.today { background:rgba(138,99,180,0.04); }
+    .cal-day.blocked { background:#fff5f5; }
+
+    .day-num { font-size:0.82rem; font-weight:700; color:var(--text-dark); margin-bottom:5px; width:26px; height:26px; display:flex; align-items:center; justify-content:center; border-radius:50%; }
+    .cal-day.today .day-num { background:linear-gradient(135deg,var(--royal-purple),var(--dark-purple)); color:#fff; }
+    .cal-day.blocked .day-num { color:#f87171; }
+
+    .blocked-label { font-size:0.62rem; font-weight:700; color:#f87171; letter-spacing:0.5px; margin-bottom:4px; text-transform:uppercase; }
+
+    /* booking chips */
+    .booking-chip { border-radius:5px; padding:3px 7px; margin-bottom:3px; font-size:0.68rem; font-weight:700; cursor:pointer; transition:filter 0.2s; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .booking-chip:hover { filter:brightness(0.9); }
+    .chip-pending   { background:#fff8e1; color:#b45309; border:1px solid #fde68a; }
+    .chip-confirmed { background:#f0fdf4; color:#16a34a; border:1px solid #bbf7d0; }
+    .chip-completed { background:#eff6ff; color:#2563eb; border:1px solid #bfdbfe; }
+    .chip-cancelled { background:#fef2f2; color:#dc2626; border:1px solid #fecaca; }
+
+    .more-chip { font-size:0.65rem; color:var(--text-light); font-weight:700; padding:2px 6px; }
+
+    /* ── Detail popover ── */
+    .popover-overlay { position:fixed; inset:0; z-index:400; display:none; }
+    .popover-overlay.open { display:block; }
+    .popover { position:fixed; background:#fff; border-radius:16px; padding:20px; width:260px; box-shadow:0 12px 40px rgba(74,45,111,0.22); border:1px solid rgba(138,99,180,0.15); z-index:500; animation:popIn 0.2s ease; }
+    @keyframes popIn { from{opacity:0;transform:scale(0.95);}to{opacity:1;transform:scale(1);} }
+    .popover-close { position:absolute; top:12px; right:14px; font-size:1rem; cursor:pointer; color:var(--text-light); background:none; border:none; line-height:1; padding:2px; }
+    .pop-date  { font-size:0.62rem; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--text-light); margin-bottom:10px; }
+    .pop-item  { padding:10px 0; border-bottom:1px solid rgba(138,99,180,0.07); }
+    .pop-item:last-child { border-bottom:none; padding-bottom:0; }
+    .pop-token { font-family:'Cormorant Garamond',serif; font-size:1rem; font-weight:600; color:var(--dark-purple); }
+    .pop-name  { font-size:0.82rem; color:var(--text-dark); font-weight:600; margin-top:2px; }
+    .pop-time  { font-size:0.76rem; color:var(--text-light); margin-top:1px; }
+    .pop-badge { display:inline-block; padding:2px 8px; border-radius:50px; font-size:0.62rem; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; margin-top:4px; }
+
+    @media (max-width:900px) {
+      .sidebar { transform:translateX(-100%); }
+      .sidebar.open { transform:translateX(0); }
+      .main { margin-left:0; padding-top:60px; }
+      .mobile-topbar { display:flex; }
+      .topbar { top:60px; padding:0 18px; height:54px; }
+      .admin-name { display:none; }
+      .page-content { padding:14px 12px; }
+      .cal-day { min-height:70px; padding:5px; }
+      .booking-chip { display:none; }
+      .day-num { font-size:0.78rem; }
+    }
+    @media (max-width:480px) {
+      .cal-day { min-height:50px; padding:4px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-name">L U M <em>I</em> È R E</div>
+    <div class="sidebar-logo-tag">Luxury Hair Salon</div>
+    <span class="sidebar-badge">Admin Panel</span>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="sidebar-section">Manage</div>
+    <a href="{{ url_for('admin_analytics') }}" class="sidebar-link" onclick="closeSidebar()">
+      <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Analytics
+    </a>
+    <a href="{{ url_for('admin_dashboard') }}" class="sidebar-link" onclick="closeSidebar()">
+      <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>Services
+    </a>
+    <a href="{{ url_for('admin_bookings') }}" class="sidebar-link" onclick="closeSidebar()">
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Bookings
+    </a>
+    <a href="{{ url_for('admin_calendar') }}" class="sidebar-link active" onclick="closeSidebar()">
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>Calendar
+    </a>
+    <div class="sidebar-section" style="margin-top:16px;">Settings</div>
+    <a href="{{ url_for('admin_settings') }}" class="sidebar-link" onclick="closeSidebar()">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings
+    </a>
+    <div class="sidebar-section" style="margin-top:16px;">Site</div>
+    <a href="{{ url_for('home') }}" class="sidebar-link" target="_blank">
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>View Website
+    </a>
+  </nav>
+  <div class="sidebar-footer">
+    <form method="POST" action="{{ url_for('admin_logout') }}" style="margin:0">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <button type="submit" class="logout-btn">
+        <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Sign Out
+      </button>
+    </form>
+  </div>
+</aside>
+
+<div class="mobile-topbar">
+  <div class="mobile-logo">L U M <em>I</em> È R E</div>
+  <div class="mobile-topbar-right">
+    <form method="POST" action="{{ url_for('admin_logout') }}" style="margin:0">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <button type="submit" class="mobile-logout-btn">
+        <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Logout
+      </button>
+    </form>
+    <button class="mobile-menu-btn" id="menuBtn" onclick="toggleSidebar()">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</div>
+
+<div class="main">
+  <header class="topbar">
+    <h1 class="topbar-title">Booking <em>Calendar</em></h1>
+    <div class="topbar-right">
+      <span class="admin-name">Admin</span>
+      <div class="admin-avatar">AD</div>
+    </div>
+  </header>
+
+  <div class="page-content">
+
+    <!-- Nav -->
+    <div class="cal-nav">
+      <div class="cal-month-title">{{ month_name }} <em>{{ year }}</em></div>
+      <div class="cal-nav-btns">
+        <a href="{{ url_for('admin_calendar', year=prev_year, month=prev_month) }}" class="nav-btn">
+          <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Prev
+        </a>
+        <a href="{{ url_for('admin_calendar') }}" class="nav-btn today-btn">Today</a>
+        <a href="{{ url_for('admin_calendar', year=next_year, month=next_month) }}" class="nav-btn">
+          Next<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+        </a>
+      </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="cal-legend">
+      <span class="legend-item"><span class="legend-dot" style="background:#8a63b4;"></span>Has Bookings</span>
+      <span class="legend-item"><span class="legend-dot" style="background:#fecaca;border:1px solid #f87171;"></span>Blocked / Closed</span>
+      <span class="legend-item"><span class="legend-dot" style="background:linear-gradient(135deg,#8a63b4,#4a2d6f);"></span>Today</span>
+    </div>
+
+    <!-- Calendar -->
+    <div class="cal-wrap">
+      <div class="cal-header">
+        <div class="cal-dow">Sun</div>
+        <div class="cal-dow">Mon</div>
+        <div class="cal-dow">Tue</div>
+        <div class="cal-dow">Wed</div>
+        <div class="cal-dow">Thu</div>
+        <div class="cal-dow">Fri</div>
+        <div class="cal-dow weekend">Sat</div>
+      </div>
+
+      <div class="cal-body">
+        {% for week in cal_weeks %}
+        <div class="cal-week">
+          {% for day in week %}
+            {% if day == 0 %}
+              <div class="cal-day empty"></div>
+            {% else %}
+              {% set date_str = "%04d-%02d-%02d" | format(year, month, day) %}
+              {% set is_today   = date_str == today %}
+              {% set is_blocked = date_str in blocked %}
+              {% set day_bookings = by_date.get(date_str, []) %}
+              <div class="cal-day {{ 'today' if is_today }} {{ 'blocked' if is_blocked }}"
+                   data-date="{{ date_str }}"
+                   data-bookings="{{ day_bookings | tojson | e }}"
+                   data-blocked="{{ 'true' if is_blocked else 'false' }}"
+                   onclick="showPopoverFromEl(this, event)">
+                <div class="day-num">{{ day }}</div>
+                {% if is_blocked %}
+                  <div class="blocked-label">Closed</div>
+                {% endif %}
+                {% for bk in day_bookings[:3] %}
+                  <div class="booking-chip chip-{{ bk.status }}">
+                    {{ bk.time }} · {{ bk.name[:12] }}{% if bk.name|length > 12 %}…{% endif %}
+                  </div>
+                {% endfor %}
+                {% if day_bookings | length > 3 %}
+                  <div class="more-chip">+{{ day_bookings|length - 3 }} more</div>
+                {% endif %}
+              </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Popover -->
+<div class="popover-overlay" id="popoverOverlay" onclick="closePopover()"></div>
+<div class="popover" id="popover" style="display:none;">
+  <button class="popover-close" onclick="closePopover()">✕</button>
+  <div class="pop-date" id="popDate"></div>
+  <div id="popContent"></div>
+</div>
+
+<script>
+  function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('sidebarOverlay').classList.toggle('open');
+    document.getElementById('menuBtn').classList.toggle('open');
+  }
+  function closeSidebar() {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebarOverlay').classList.remove('open');
+    document.getElementById('menuBtn').classList.remove('open');
+  }
+
+  const statusBadgeClass = {
+    pending:'background:#fff8e1;color:#b45309;border:1px solid #fde68a;',
+    confirmed:'background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;',
+    completed:'background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;',
+    cancelled:'background:#fef2f2;color:#dc2626;border:1px solid #fecaca;',
+  };
+
+  function showPopoverFromEl(el, event) {
+    const bookings  = JSON.parse(el.dataset.bookings || '[]');
+    const isBlocked = el.dataset.blocked === 'true';
+    showPopover(el.dataset.date, bookings, isBlocked, event);
+  }
+
+  function showPopover(dateStr, bookings, isBlocked, event) {
+    const pop     = document.getElementById('popover');
+    const overlay = document.getElementById('popoverOverlay');
+
+    // Format date nicely
+    const d = new Date(dateStr + 'T00:00:00');
+    document.getElementById('popDate').textContent = d.toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+
+    let html = '';
+    if (isBlocked) {
+      html += `<div style="color:#f87171;font-weight:700;font-size:0.82rem;padding:8px 0;">🚫 Salon Closed / Holiday</div>`;
+    }
+    if (bookings.length === 0 && !isBlocked) {
+      html = `<div style="color:var(--text-light);font-size:0.82rem;padding:8px 0;">No bookings for this day.</div>`;
+    }
+    bookings.forEach(bk => {
+      const bs = statusBadgeClass[bk.status] || '';
+      html += `<div class="pop-item">
+        <div class="pop-token">${bk.token}</div>
+        <div class="pop-name">${bk.name}</div>
+        <div class="pop-time">🕐 ${bk.time}</div>
+        <span class="pop-badge" style="${bs}">${bk.status}</span>
+      </div>`;
+    });
+    document.getElementById('popContent').innerHTML = html;
+
+    // Position near click
+    const rect = event.currentTarget.getBoundingClientRect();
+    const popW = 260, popH = 300;
+    let left = rect.right + 8;
+    let top  = rect.top;
+    if (left + popW > window.innerWidth)  left = rect.left - popW - 8;
+    if (top  + popH > window.innerHeight) top  = window.innerHeight - popH - 10;
+    if (top < 10) top = 10;
+
+    pop.style.left    = left + 'px';
+    pop.style.top     = top  + 'px';
+    pop.style.display = 'block';
+    overlay.classList.add('open');
+  }
+
+  function closePopover() {
+    document.getElementById('popover').style.display = 'none';
+    document.getElementById('popoverOverlay').classList.remove('open');
+  }
+
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closePopover(); });
+</script>
+</body>
+</html>

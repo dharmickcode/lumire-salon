@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Dashboard – Lumière</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --royal-purple:    #8a63b4;
+      --dark-purple:     #4a2d6f;
+      --pastel-lavender: #ede0f7;
+      --text-light:      #9c8aac;
+      --text-dark:       #2d2035;
+      --sidebar-w:       240px;
+    }
+
+    body { font-family: 'Quicksand', sans-serif; background: #f5f2fa; color: var(--text-dark); min-height: 100vh; display: flex; }
+    a { text-decoration: none; color: inherit; }
+
+    /* ===== SIDEBAR ===== */
+    .sidebar {
+      width: var(--sidebar-w);
+      min-height: 100vh;
+      background: var(--dark-purple);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0; left: 0;
+      z-index: 200;
+      box-shadow: 4px 0 24px rgba(74,45,111,0.18);
+      transition: transform 0.35s cubic-bezier(0.22,1,0.36,1);
+    }
+
+    .sidebar-logo { padding: 28px 24px 20px; border-bottom: 1px solid rgba(255,255,255,0.07); }
+    .sidebar-logo-name { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; font-weight: 300; letter-spacing: 0.2em; color: #fff; }
+    .sidebar-logo-name em { font-style: italic; color: rgba(200,165,235,0.9); }
+    .sidebar-logo-tag { font-size: 0.58rem; letter-spacing: 3px; text-transform: uppercase; color: rgba(255,255,255,0.3); margin-top: 3px; }
+    .sidebar-badge { display: inline-block; margin-top: 8px; font-size: 0.6rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; background: rgba(138,99,180,0.35); color: rgba(200,165,235,0.9); padding: 3px 8px; border-radius: 50px; border: 1px solid rgba(138,99,180,0.4); }
+
+    .sidebar-nav { flex: 1; padding: 20px 0; }
+    .sidebar-section { font-size: 0.6rem; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: rgba(255,255,255,0.2); padding: 14px 24px 8px; }
+    .sidebar-link { display: flex; align-items: center; gap: 12px; padding: 11px 24px; font-size: 0.83rem; font-weight: 600; color: rgba(255,255,255,0.5); transition: all 0.25s; border-left: 3px solid transparent; }
+    .sidebar-link svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.8; flex-shrink: 0; }
+    .sidebar-link:hover { color: #fff; background: rgba(255,255,255,0.05); }
+    .sidebar-link.active { color: #fff; background: rgba(138,99,180,0.2); border-left-color: var(--royal-purple); }
+
+    .sidebar-footer { padding: 20px 24px; border-top: 1px solid rgba(255,255,255,0.07); }
+    .logout-btn { display: flex; align-items: center; gap: 10px; font-size: 0.8rem; font-weight: 600; color: rgba(255,255,255,0.4); transition: color 0.2s; cursor: pointer; background: none; border: none; font-family: 'Quicksand', sans-serif; width: 100%; padding: 0; }
+    .logout-btn svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; }
+    .logout-btn:hover { color: #ff8a8a; }
+
+    /* Overlay */
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(74,45,111,0.45); backdrop-filter: blur(3px); z-index: 150; }
+    .sidebar-overlay.open { display: block; }
+
+    /* ===== MOBILE TOPBAR ===== */
+    .mobile-topbar { display: none; position: fixed; top: 0; left: 0; right: 0; height: 60px; background: var(--dark-purple); z-index: 100; align-items: center; justify-content: space-between; padding: 0 18px; box-shadow: 0 2px 16px rgba(74,45,111,0.25); }
+    .mobile-logo { font-family: 'Cormorant Garamond', serif; font-size: 1.15rem; font-weight: 300; letter-spacing: 0.2em; color: #fff; }
+    .mobile-logo em { font-style: italic; color: rgba(200,165,235,0.9); }
+    .mobile-topbar-right { display: flex; align-items: center; gap: 8px; }
+    .mobile-logout-btn {
+      display: flex; align-items: center; gap: 6px;
+      background: rgba(255,100,100,0.15); border: 1px solid rgba(255,100,100,0.25);
+      border-radius: 8px; padding: 7px 12px; cursor: pointer;
+      font-family: 'Quicksand', sans-serif; font-size: 0.72rem; font-weight: 700;
+      letter-spacing: 1px; text-transform: uppercase; color: rgba(255,160,160,0.9);
+      transition: all 0.25s;
+    }
+    .mobile-logout-btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; }
+    .mobile-logout-btn:hover { background: rgba(220,60,60,0.3); border-color: rgba(255,100,100,0.45); color: #ffaaaa; }
+    .mobile-menu-btn { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-direction: column; gap: 4px; padding: 0; }
+    .mobile-menu-btn span { display: block; width: 18px; height: 2px; background: #fff; border-radius: 2px; transition: all 0.3s ease; }
+    .mobile-menu-btn.open span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+    .mobile-menu-btn.open span:nth-child(2) { opacity: 0; }
+    .mobile-menu-btn.open span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+
+    /* ===== MAIN ===== */
+    .main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+    .topbar { background: #fff; border-bottom: 1px solid rgba(138,99,180,0.1); padding: 0 36px; height: 64px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
+    .topbar-title { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 400; color: var(--dark-purple); }
+    .topbar-title em { font-style: italic; color: var(--royal-purple); }
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+    .admin-avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, var(--royal-purple), var(--dark-purple)); display: flex; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 700; color: #fff; }
+    .admin-name { font-size: 0.82rem; font-weight: 600; color: var(--text-light); }
+
+    .page-content { padding: 36px; flex: 1; }
+
+    .alert { padding: 12px 16px; border-radius: 10px; margin-bottom: 24px; font-size: 0.88rem; font-weight: 500; }
+    .alert-success { background: #f0faf4; color: #1e7e4a; border: 1px solid #b7e4c7; }
+    .alert-error, .alert-danger { background: #fdf0f0; color: #c0392b; border: 1px solid #f5c6c6; }
+
+    /* ===== STATS ===== */
+    .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 16px; margin-bottom: 28px; }
+    .stat-card { background: #fff; border: 1px solid rgba(138,99,180,0.1); border-radius: 16px; padding: 18px 20px; position: relative; overflow: hidden; transition: transform 0.3s, box-shadow 0.3s; }
+    .stat-card:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(138,99,180,0.1); }
+    .stat-card::after { content: ''; position: absolute; top: -30px; right: -30px; width: 90px; height: 90px; border-radius: 50%; background: radial-gradient(circle, rgba(200,160,230,0.15), transparent 70%); }
+    .stat-icon { font-size: 1.1rem; margin-bottom: 8px; }
+    .stat-val { font-family: 'Cormorant Garamond', serif; font-size: 1.9rem; font-weight: 600; color: var(--dark-purple); line-height: 1; margin-bottom: 4px; }
+    .stat-label { font-size: 0.68rem; font-weight: 600; color: var(--text-light); text-transform: uppercase; letter-spacing: 1px; }
+
+    /* ===== ADD PANEL ===== */
+    .add-panel { background: #fff; border: 1px solid rgba(138,99,180,0.1); border-radius: 18px; padding: 26px 28px; margin-bottom: 28px; }
+    .add-panel-title { font-size: 0.75rem; font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase; color: var(--text-light); margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+    .add-panel-title::after { content: ''; flex: 1; height: 1px; background: rgba(138,99,180,0.1); }
+
+    .form-row { display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 14px; align-items: end; }
+    .form-group label { display: block; font-size: 0.72rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--dark-purple); opacity: 0.7; margin-bottom: 7px; }
+    .form-control { width: 100%; padding: 11px 14px; border: 1.5px solid rgba(138,99,180,0.15); border-radius: 10px; font-family: 'Quicksand', sans-serif; font-size: 0.9rem; color: var(--text-dark); background: #faf8fd; outline: none; transition: border-color 0.3s, box-shadow 0.3s; }
+    .form-control:focus { border-color: var(--royal-purple); box-shadow: 0 0 0 3px rgba(138,99,180,0.1); background: #fff; }
+    textarea.form-control { resize: vertical; min-height: 44px; }
+
+    /* ===== BUTTONS ===== */
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 11px 20px; border-radius: 50px; font-family: 'Quicksand', sans-serif; font-size: 0.78rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; border: none; transition: all 0.3s; text-decoration: none; white-space: nowrap; }
+    .btn svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2.5; }
+    .btn-primary { background: linear-gradient(135deg, var(--royal-purple), var(--dark-purple)); color: #fff; box-shadow: 0 4px 16px rgba(138,99,180,0.28); }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(138,99,180,0.38); }
+    .btn-outline { background: transparent; color: var(--royal-purple); border: 1.5px solid rgba(138,99,180,0.3); }
+    .btn-outline:hover { background: var(--royal-purple); color: #fff; border-color: var(--royal-purple); }
+    .btn-danger { background: transparent; color: #e05555; border: 1.5px solid rgba(220,85,85,0.25); }
+    .btn-danger:hover { background: #e05555; color: #fff; border-color: #e05555; }
+
+    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+    .section-header h2 { font-family: 'Cormorant Garamond', serif; font-size: 1.6rem; font-weight: 400; color: var(--dark-purple); }
+    .section-header h2 em { font-style: italic; color: var(--royal-purple); }
+
+    /* ===== TABLE ===== */
+    .table-wrap { background: #fff; border: 1px solid rgba(138,99,180,0.1); border-radius: 18px; overflow: hidden; }
+    .table-toolbar { padding: 16px 22px; border-bottom: 1px solid rgba(138,99,180,0.07); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+    .table-count { font-size: 0.8rem; color: var(--text-light); font-weight: 600; }
+    .table-count strong { color: var(--dark-purple); }
+    table { width: 100%; border-collapse: collapse; }
+    thead th { background: #faf8fd; font-size: 0.66rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--text-light); padding: 13px 16px; text-align: left; border-bottom: 1px solid rgba(138,99,180,0.08); }
+    tbody tr { border-bottom: 1px solid rgba(138,99,180,0.06); transition: background 0.2s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: rgba(138,99,180,0.03); }
+    tbody td { padding: 14px 16px; font-size: 0.86rem; color: var(--text-dark); vertical-align: middle; }
+    .td-name { font-weight: 600; color: var(--dark-purple); display: flex; align-items: center; gap: 8px; }
+    .service-dot { width: 7px; height: 7px; border-radius: 50%; background: linear-gradient(135deg, var(--royal-purple), var(--dark-purple)); flex-shrink: 0; }
+    .td-desc { color: var(--text-light); font-size: 0.82rem; max-width: 200px; }
+    .td-price { font-family: 'Cormorant Garamond', serif; font-size: 1.15rem; font-weight: 600; color: var(--royal-purple); }
+    .td-duration { font-size: 0.82rem; color: var(--text-light); font-weight: 600; }
+    .td-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    /* ===== MOBILE CARDS ===== */
+    .service-cards { display: none; flex-direction: column; gap: 12px; padding: 16px; }
+    .smc { background: #faf8fd; border: 1px solid rgba(138,99,180,0.1); border-radius: 14px; padding: 16px 18px; }
+    .smc-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 6px; }
+    .smc-name { font-weight: 700; color: var(--dark-purple); font-size: 0.95rem; display: flex; align-items: center; gap: 7px; }
+    .smc-price { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; font-weight: 600; color: var(--royal-purple); }
+    .smc-meta { font-size: 0.78rem; color: var(--text-light); font-weight: 600; margin-bottom: 10px; }
+    .smc-desc { font-size: 0.82rem; color: var(--text-light); line-height: 1.55; margin-bottom: 14px; }
+    .smc-actions { display: flex; gap: 10px; }
+
+    /* ===== EMPTY ===== */
+    .empty-state { text-align: center; padding: 50px 20px; }
+    .empty-icon { font-size: 2.5rem; margin-bottom: 14px; opacity: 0.4; }
+    .empty-state p { color: var(--text-light); font-size: 0.9rem; }
+
+    /* ===== MODAL ===== */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(74,45,111,0.35); backdrop-filter: blur(4px); z-index: 500; display: none; align-items: center; justify-content: center; padding: 20px; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: #fff; border-radius: 20px; padding: 32px 28px; width: 100%; max-width: 460px; box-shadow: 0 24px 60px rgba(74,45,111,0.2); animation: modalIn 0.3s cubic-bezier(0.22,1,0.36,1) both; max-height: 90vh; overflow-y: auto; }
+    @keyframes modalIn { from { opacity:0; transform: scale(0.95) translateY(10px); } to { opacity:1; transform: scale(1) translateY(0); } }
+    .modal-title { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-weight: 400; color: var(--dark-purple); margin-bottom: 4px; }
+    .modal-title em { font-style: italic; color: var(--royal-purple); }
+    .modal-sub { font-size: 0.8rem; color: var(--text-light); margin-bottom: 24px; }
+    .modal-form-group { margin-bottom: 16px; }
+    .modal-form-group label { font-size: 0.72rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--dark-purple); opacity: 0.7; display: block; margin-bottom: 7px; }
+    .modal-actions { display: flex; gap: 10px; margin-top: 22px; justify-content: flex-end; }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 900px) {
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); }
+      .main { margin-left: 0; padding-top: 60px; }
+      .mobile-topbar { display: flex; }
+      .topbar { top: 60px; padding: 0 18px; height: 54px; }
+      .topbar-title { font-size: 1.2rem; }
+      .admin-name { display: none; }
+      .page-content { padding: 18px 14px; }
+    }
+
+    @media (max-width: 680px) {
+      .form-row { grid-template-columns: 1fr 1fr; }
+      .form-row > div:nth-child(3),
+      .form-row > div:nth-child(4) { grid-column: span 1; }
+      .form-row > div:last-child { grid-column: 1 / -1; }
+    }
+
+    @media (max-width: 600px) {
+      /* swap table for cards */
+      .table-wrap > table { display: none; }
+      .service-cards { display: flex; }
+      .form-row { grid-template-columns: 1fr; }
+      .stats-row { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+      .stat-card { padding: 12px 10px; }
+      .stat-val { font-size: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-name">L U M <em>I</em> È R E</div>
+      <div class="sidebar-logo-tag">Luxury Hair Salon</div>
+      <span class="sidebar-badge">Admin Panel</span>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="sidebar-section">Manage</div>
+      <a href="{{ url_for('admin_analytics') }}" class="sidebar-link" onclick="closeSidebar()">
+        <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Analytics
+      </a>
+      <a href="{{ url_for('admin_dashboard') }}" class="sidebar-link active" onclick="closeSidebar()">
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>Services
+      </a>
+      <a href="{{ url_for('admin_bookings') }}" class="sidebar-link" onclick="closeSidebar()">
+        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Bookings
+      </a>
+      <a href="{{ url_for('admin_calendar') }}" class="sidebar-link" onclick="closeSidebar()">
+        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>Calendar
+      </a>
+      <div class="sidebar-section" style="margin-top:16px;">Settings</div>
+      <a href="{{ url_for('admin_settings') }}" class="sidebar-link" onclick="closeSidebar()">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings
+      </a>
+      <div class="sidebar-section" style="margin-top:16px;">Site</div>
+      <a href="{{ url_for('home') }}" class="sidebar-link" target="_blank">
+        <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>View Website
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <form method="POST" action="{{ url_for('admin_logout') }}" style="margin:0">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <button type="submit" class="logout-btn">
+          <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Sign Out
+        </button>
+      </form>
+    </div>
+  </aside>
+
+  <!-- MOBILE TOPBAR -->
+  <div class="mobile-topbar">
+    <div class="mobile-logo">L U M <em>I</em> È R E</div>
+    <button class="mobile-menu-btn" id="menuBtn" onclick="toggleSidebar()">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <header class="topbar">
+      <h1 class="topbar-title">Service <em>Management</em></h1>
+      <div class="topbar-right">
+        <span class="admin-name">Admin</span>
+        <div class="admin-avatar">AD</div>
+      </div>
+    </header>
+
+    <div class="page-content">
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}{% for category, message in messages %}
+          <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}{% endif %}
+      {% endwith %}
+
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-icon">✂️</div><div class="stat-val">{{ services|length }}</div><div class="stat-label">Total</div></div>
+        <div class="stat-card"><div class="stat-icon">💰</div><div class="stat-val">₹{{ services | map(attribute='price') | list | min if services else 0 }}</div><div class="stat-label">From</div></div>
+        <div class="stat-card"><div class="stat-icon">👑</div><div class="stat-val">₹{{ services | map(attribute='price') | list | max if services else 0 }}</div><div class="stat-label">Premium</div></div>
+      </div>
+
+      <div class="add-panel">
+        <p class="add-panel-title">Add New Service</p>
+        <form method="POST" action="{{ url_for('admin_add_service') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <div class="form-row">
+            <div class="form-group"><label>Service Name</label><input type="text" name="name" class="form-control" placeholder="e.g. Keratin Treatment" required/></div>
+            <div class="form-group"><label>Price (₹)</label><input type="number" name="price" class="form-control" placeholder="2500" min="0" required/></div>
+            <div class="form-group"><label>Duration</label><input type="text" name="duration" class="form-control" placeholder="60 min"/></div>
+            <div class="form-group"><label>&nbsp;</label><button type="submit" class="btn btn-primary" style="width:100%"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add</button></div>
+          </div>
+          <div class="form-group" style="margin-top:4px;">
+            <label>Description</label>
+            <textarea name="description" class="form-control" rows="2" placeholder="Brief description..."></textarea>
+          </div>
+        </form>
+      </div>
+
+      <div class="section-header">
+        <h2>All <em>Services</em></h2>
+      </div>
+
+      <div class="table-wrap">
+        <div class="table-toolbar">
+          <span class="table-count"><strong>{{ services|length }}</strong> services listed</span>
+        </div>
+
+        {% if services %}
+        <!-- Desktop table -->
+        <table>
+          <thead><tr><th>#</th><th>Service</th><th>Description</th><th>Duration</th><th>Price</th><th>Actions</th></tr></thead>
+          <tbody>
+            {% for s in services %}
+            <tr>
+              <td style="color:var(--text-light);font-size:0.8rem;">{{ loop.index }}</td>
+              <td><div class="td-name"><span class="service-dot"></span>{{ s.name }}</div></td>
+              <td class="td-desc">{{ s.description or '—' }}</td>
+              <td class="td-duration">{{ s.duration or '—' }}</td>
+              <td class="td-price">₹{{ s.price }}</td>
+              {% set s_desc = s.description or '' %}
+              {% set s_dur  = s.duration    or '' %}
+              <td>
+                <div class="td-actions">
+                  <button class="btn btn-outline"
+                    data-id="{{ s.id }}" data-name="{{ s.name }}"
+                    data-price="{{ s.price }}" data-desc="{{ s_desc }}" data-dur="{{ s_dur }}"
+                    onclick="openEditFromBtn(this)">
+                    <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit
+                  </button>
+                  <form method="POST" action="{{ url_for('admin_delete_service', service_id=s.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <button type="submit" class="btn btn-danger"
+                      data-name="{{ s.name }}"
+                      onclick="return confirm('Delete ' + this.dataset.name + '?')">
+                      <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg>Delete
+                    </button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        <!-- Mobile cards -->
+        <div class="service-cards">
+          {% for s in services %}
+          <div class="smc">
+            <div class="smc-top">
+              <div class="smc-name"><span class="service-dot"></span>{{ s.name }}</div>
+              <div class="smc-price">₹{{ s.price }}</div>
+            </div>
+            {% if s.duration %}<div class="smc-meta">⏱ {{ s.duration }}</div>{% endif %}
+            {% if s.description %}<div class="smc-desc">{{ s.description }}</div>{% endif %}
+            <div class="smc-actions">
+              {% set s_desc = s.description or '' %}
+              {% set s_dur  = s.duration    or '' %}
+              <button class="btn btn-outline"
+                data-id="{{ s.id }}" data-name="{{ s.name }}"
+                data-price="{{ s.price }}" data-desc="{{ s_desc }}" data-dur="{{ s_dur }}"
+                onclick="openEditFromBtn(this)">
+                <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit
+              </button>
+              <form method="POST" action="{{ url_for('admin_delete_service', service_id=s.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <button type="submit" class="btn btn-danger"
+                  data-name="{{ s.name }}"
+                  onclick="return confirm('Delete ' + this.dataset.name + '?')">
+                  <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>Delete
+                </button>
+              </form>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+
+        {% else %}
+        <div class="empty-state"><div class="empty-icon">✂️</div><p>No services yet. Add your first service above.</p></div>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+
+  <!-- EDIT MODAL -->
+  <div class="modal-overlay" id="editModal">
+    <div class="modal">
+      <h2 class="modal-title">Edit <em>Service</em></h2>
+      <p class="modal-sub">Update the service details below</p>
+      <form method="POST" id="editForm" action="">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <div class="modal-form-group"><label>Service Name</label><input type="text" name="name" id="editName" class="form-control" required/></div>
+        <div class="modal-form-group"><label>Price (₹)</label><input type="number" name="price" id="editPrice" class="form-control" min="0" required/></div>
+        <div class="modal-form-group"><label>Duration</label><input type="text" name="duration" id="editDuration" class="form-control" placeholder="e.g. 60 min"/></div>
+        <div class="modal-form-group"><label>Description</label><textarea name="description" id="editDesc" class="form-control" rows="3"></textarea></div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-outline" onclick="closeEdit()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function toggleSidebar() {
+      const s = document.getElementById('sidebar');
+      const o = document.getElementById('sidebarOverlay');
+      const b = document.getElementById('menuBtn');
+      s.classList.toggle('open');
+      o.classList.toggle('open');
+      b.classList.toggle('open');
+    }
+    function closeSidebar() {
+      document.getElementById('sidebar').classList.remove('open');
+      document.getElementById('sidebarOverlay').classList.remove('open');
+      document.getElementById('menuBtn').classList.remove('open');
+    }
+    function openEditFromBtn(btn) {
+      openEdit(btn.dataset.id, btn.dataset.name, btn.dataset.price, btn.dataset.desc, btn.dataset.dur);
+    }
+    function openEdit(id, name, price, desc, duration) {
+      document.getElementById('editName').value     = name;
+      document.getElementById('editPrice').value    = price;
+      document.getElementById('editDesc').value     = desc;
+      document.getElementById('editDuration').value = duration;
+      document.getElementById('editForm').action    = '/admin/services/' + id + '/edit';
+      document.getElementById('editModal').classList.add('open');
+    }
+    function closeEdit() { document.getElementById('editModal').classList.remove('open'); }
+    document.getElementById('editModal').addEventListener('click', e => { if (e.target === document.getElementById('editModal')) closeEdit(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeEdit(); });
+  </script>
+</body>
+</html>

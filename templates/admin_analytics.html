@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Analytics – Lumière Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --royal-purple: #8a63b4; --dark-purple: #4a2d6f;
+      --pastel-lavender: #ede0f7; --text-light: #9c8aac;
+      --text-dark: #2d2035; --sidebar-w: 240px;
+    }
+    body { font-family: 'Quicksand', sans-serif; background: #f5f2fa; color: var(--text-dark); min-height: 100vh; display: flex; }
+    a { text-decoration: none; color: inherit; }
+
+    /* ── Sidebar ── */
+    .sidebar { width: var(--sidebar-w); min-height: 100vh; background: var(--dark-purple); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; z-index: 200; box-shadow: 4px 0 24px rgba(74,45,111,0.18); transition: transform 0.35s cubic-bezier(0.22,1,0.36,1); }
+    .sidebar-logo { padding: 28px 24px 20px; border-bottom: 1px solid rgba(255,255,255,0.07); }
+    .sidebar-logo-name { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; font-weight: 300; letter-spacing: 0.2em; color: #fff; }
+    .sidebar-logo-name em { font-style: italic; color: rgba(200,165,235,0.9); }
+    .sidebar-logo-tag { font-size: 0.58rem; letter-spacing: 3px; text-transform: uppercase; color: rgba(255,255,255,0.3); margin-top: 3px; }
+    .sidebar-badge { display: inline-block; margin-top: 8px; font-size: 0.6rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; background: rgba(138,99,180,0.35); color: rgba(200,165,235,0.9); padding: 3px 8px; border-radius: 50px; border: 1px solid rgba(138,99,180,0.4); }
+    .sidebar-nav { flex: 1; padding: 20px 0; }
+    .sidebar-section { font-size: 0.6rem; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: rgba(255,255,255,0.2); padding: 14px 24px 8px; }
+    .sidebar-link { display: flex; align-items: center; gap: 12px; padding: 11px 24px; font-size: 0.83rem; font-weight: 600; color: rgba(255,255,255,0.5); transition: all 0.25s; border-left: 3px solid transparent; }
+    .sidebar-link svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.8; flex-shrink: 0; }
+    .sidebar-link:hover { color: #fff; background: rgba(255,255,255,0.05); }
+    .sidebar-link.active { color: #fff; background: rgba(138,99,180,0.2); border-left-color: var(--royal-purple); }
+    .sidebar-footer { padding: 20px 24px; border-top: 1px solid rgba(255,255,255,0.07); }
+    .logout-btn { display: flex; align-items: center; gap: 10px; font-size: 0.8rem; font-weight: 600; color: rgba(255,255,255,0.4); transition: color 0.2s; cursor: pointer; background: none; border: none; font-family: 'Quicksand', sans-serif; width: 100%; padding: 0; }
+    .logout-btn svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; }
+    .logout-btn:hover { color: #ff8a8a; }
+
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(74,45,111,0.45); backdrop-filter: blur(3px); z-index: 150; }
+    .sidebar-overlay.open { display: block; }
+
+    /* ── Mobile topbar ── */
+    .mobile-topbar { display: none; position: fixed; top: 0; left: 0; right: 0; height: 60px; background: var(--dark-purple); z-index: 100; align-items: center; justify-content: space-between; padding: 0 18px; box-shadow: 0 2px 16px rgba(74,45,111,0.25); }
+    .mobile-logo { font-family: 'Cormorant Garamond', serif; font-size: 1.15rem; font-weight: 300; letter-spacing: 0.2em; color: #fff; }
+    .mobile-logo em { font-style: italic; color: rgba(200,165,235,0.9); }
+    .mobile-topbar-right { display: flex; align-items: center; gap: 8px; }
+    .mobile-logout-btn { display: flex; align-items: center; gap: 6px; background: rgba(255,100,100,0.15); border: 1px solid rgba(255,100,100,0.25); border-radius: 8px; padding: 7px 12px; cursor: pointer; font-family: 'Quicksand', sans-serif; font-size: 0.72rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: rgba(255,160,160,0.9); transition: all 0.25s; }
+    .mobile-logout-btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; }
+    .mobile-logout-btn:hover { background: rgba(220,60,60,0.3); color: #ffaaaa; }
+    .mobile-menu-btn { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-direction: column; gap: 4px; padding: 0; }
+    .mobile-menu-btn span { display: block; width: 18px; height: 2px; background: #fff; border-radius: 2px; transition: all 0.3s ease; }
+    .mobile-menu-btn.open span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+    .mobile-menu-btn.open span:nth-child(2) { opacity: 0; }
+    .mobile-menu-btn.open span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+
+    /* ── Main ── */
+    .main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+    .topbar { background: #fff; border-bottom: 1px solid rgba(138,99,180,0.1); padding: 0 36px; height: 64px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
+    .topbar-title { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 400; color: var(--dark-purple); }
+    .topbar-title em { font-style: italic; color: var(--royal-purple); }
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+    .admin-avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, var(--royal-purple), var(--dark-purple)); display: flex; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 700; color: #fff; }
+    .admin-name { font-size: 0.82rem; font-weight: 600; color: var(--text-light); }
+
+    .page-content { padding: 36px; flex: 1; }
+
+    /* ── Stat cards ── */
+    .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 28px; }
+    .stat-card { background: #fff; border: 1px solid rgba(138,99,180,0.1); border-radius: 16px; padding: 22px 24px; position: relative; overflow: hidden; transition: transform 0.3s, box-shadow 0.3s; }
+    .stat-card:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(138,99,180,0.1); }
+    .stat-card::after { content: ''; position: absolute; top: -30px; right: -30px; width: 90px; height: 90px; border-radius: 50%; background: radial-gradient(circle, rgba(200,160,230,0.15), transparent 70%); }
+    .stat-icon { font-size: 1.3rem; margin-bottom: 10px; }
+    .stat-val { font-family: 'Cormorant Garamond', serif; font-size: 2.2rem; font-weight: 600; color: var(--dark-purple); line-height: 1; margin-bottom: 5px; }
+    .stat-label { font-size: 0.68rem; font-weight: 700; color: var(--text-light); text-transform: uppercase; letter-spacing: 1.5px; }
+    .stat-sub { font-size: 0.75rem; color: var(--text-light); margin-top: 4px; }
+
+    /* ── Section header ── */
+    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; margin-top: 32px; }
+    .section-header h2 { font-family: 'Cormorant Garamond', serif; font-size: 1.6rem; font-weight: 400; color: var(--dark-purple); }
+    .section-header h2 em { font-style: italic; color: var(--royal-purple); }
+
+    /* ── Charts grid ── */
+    .charts-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 28px; }
+    .chart-card { background: #fff; border: 1px solid rgba(138,99,180,0.1); border-radius: 18px; padding: 24px 26px; }
+    .chart-card-title { font-size: 0.72rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--text-light); margin-bottom: 6px; }
+    .chart-card-sub   { font-size: 0.82rem; color: var(--text-dark); font-weight: 600; margin-bottom: 20px; }
+    .chart-wrap { position: relative; }
+
+    /* ── Status pills row ── */
+    .status-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 28px; }
+    .status-pill-card { border-radius: 14px; padding: 16px 18px; text-align: center; }
+    .status-pill-card .spv { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 600; }
+    .status-pill-card .spl { font-size: 0.68rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; margin-top: 3px; }
+    .sp-pending   { background: #fffbeb; color: #f59e0b; border: 1px solid #fde68a; }
+    .sp-confirmed { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+    .sp-completed { background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; }
+    .sp-cancelled { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+
+    /* ── Services table ── */
+    .table-card { background: #fff; border: 1px solid rgba(138,99,180,0.1); border-radius: 18px; overflow: hidden; margin-bottom: 28px; }
+    .table-card-header { padding: 18px 24px; border-bottom: 1px solid rgba(138,99,180,0.07); }
+    .table-card-header h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; font-weight: 400; color: var(--dark-purple); }
+    .table-card-header h3 em { font-style:italic; color:var(--royal-purple); }
+    table { width: 100%; border-collapse: collapse; }
+    thead th { background: #faf8fd; font-size: 0.64rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--text-light); padding: 12px 20px; text-align: left; border-bottom: 1px solid rgba(138,99,180,0.08); }
+    tbody tr { border-bottom: 1px solid rgba(138,99,180,0.05); transition: background 0.2s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: rgba(138,99,180,0.03); }
+    tbody td { padding: 14px 20px; font-size: 0.86rem; vertical-align: middle; }
+    .rank { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; font-weight: 600; color: var(--text-light); }
+    .rank.gold   { color: #f59e0b; }
+    .rank.silver { color: #94a3b8; }
+    .rank.bronze { color: #cd7f32; }
+    .svc-bar-wrap { display: flex; align-items: center; gap: 10px; }
+    .svc-bar { height: 6px; border-radius: 3px; background: linear-gradient(135deg, var(--royal-purple), var(--dark-purple)); flex-shrink: 0; }
+    .svc-count { font-size: 0.8rem; color: var(--text-light); font-weight: 600; white-space: nowrap; }
+    .svc-rev { font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; font-weight: 600; color: var(--royal-purple); }
+
+    /* ── Responsive ── */
+    @media (max-width: 900px) {
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); }
+      .main { margin-left: 0; padding-top: 60px; }
+      .mobile-topbar { display: flex; }
+      .topbar { top: 60px; padding: 0 18px; height: 54px; }
+      .admin-name { display: none; }
+      .page-content { padding: 18px 14px; }
+      .charts-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 600px) {
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+      .status-row { grid-template-columns: repeat(2, 1fr); }
+      .section-header { margin-top: 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-name">L U M <em>I</em> È R E</div>
+    <div class="sidebar-logo-tag">Luxury Hair Salon</div>
+    <span class="sidebar-badge">Admin Panel</span>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="sidebar-section">Manage</div>
+    <a href="{{ url_for('admin_analytics') }}" class="sidebar-link active" onclick="closeSidebar()">
+      <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Analytics
+    </a>
+    <a href="{{ url_for('admin_dashboard') }}" class="sidebar-link" onclick="closeSidebar()">
+      <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>Services
+    </a>
+    <a href="{{ url_for('admin_bookings') }}" class="sidebar-link" onclick="closeSidebar()">
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Bookings
+    </a>
+    <a href="{{ url_for('admin_calendar') }}" class="sidebar-link" onclick="closeSidebar()">
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>Calendar
+    </a>
+    <div class="sidebar-section" style="margin-top:16px;">Settings</div>
+    <a href="{{ url_for('admin_settings') }}" class="sidebar-link" onclick="closeSidebar()">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings
+    </a>
+    <div class="sidebar-section" style="margin-top:16px;">Site</div>
+    <a href="{{ url_for('home') }}" class="sidebar-link" target="_blank">
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>View Website
+    </a>
+  </nav>
+  <div class="sidebar-footer">
+    <form method="POST" action="{{ url_for('admin_logout') }}" style="margin:0">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <button type="submit" class="logout-btn">
+        <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Sign Out
+      </button>
+    </form>
+  </div>
+</aside>
+
+<div class="mobile-topbar">
+  <div class="mobile-logo">L U M <em>I</em> È R E</div>
+  <div class="mobile-topbar-right">
+    <form method="POST" action="{{ url_for('admin_logout') }}" style="margin:0">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <button type="submit" class="mobile-logout-btn">
+        <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Logout
+      </button>
+    </form>
+    <button class="mobile-menu-btn" id="menuBtn" onclick="toggleSidebar()">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</div>
+
+<div class="main">
+  <header class="topbar">
+    <h1 class="topbar-title">Booking <em>Analytics</em></h1>
+    <div class="topbar-right">
+      <span class="admin-name">Admin</span>
+      <div class="admin-avatar">AD</div>
+    </div>
+  </header>
+
+  <div class="page-content">
+
+    <!-- Stat cards -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-icon">📋</div>
+        <div class="stat-val">{{ total_bookings }}</div>
+        <div class="stat-label">Total Bookings</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">👥</div>
+        <div class="stat-val">{{ unique_sessions }}</div>
+        <div class="stat-label">Unique Sessions</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">⏳</div>
+        <div class="stat-val">{{ pending_count }}</div>
+        <div class="stat-label">Pending</div>
+        <div class="stat-sub">Awaiting confirmation</div>
+      </div>
+      {% set revenue_fmt = "{:,}".format(revenue_est) %}
+      <div class="stat-card">
+        <div class="stat-icon">💰</div>
+        <div class="stat-val">₹{{ revenue_fmt }}</div>
+        <div class="stat-label">Revenue Est.</div>
+        <div class="stat-sub">Confirmed + completed</div>
+      </div>
+    </div>
+
+    <!-- Status breakdown -->
+    <div class="status-row">
+      <div class="status-pill-card sp-pending">
+        <div class="spv">{{ status_counts.pending }}</div>
+        <div class="spl">Pending</div>
+      </div>
+      <div class="status-pill-card sp-confirmed">
+        <div class="spv">{{ status_counts.confirmed }}</div>
+        <div class="spl">Confirmed</div>
+      </div>
+      <div class="status-pill-card sp-completed">
+        <div class="spv">{{ status_counts.completed }}</div>
+        <div class="spl">Completed</div>
+      </div>
+      <div class="status-pill-card sp-cancelled">
+        <div class="spv">{{ status_counts.cancelled }}</div>
+        <div class="spl">Cancelled</div>
+      </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="section-header" style="margin-top:8px;">
+      <h2>Booking <em>Trends</em></h2>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-card-title">Daily Volume</div>
+        <div class="chart-card-sub">Bookings per day — last 14 days</div>
+        <div class="chart-wrap"><canvas id="dayChart" height="180"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-title">Service Popularity</div>
+        <div class="chart-card-sub">Booking count by service</div>
+        <div class="chart-wrap"><canvas id="svcChart" height="180"></canvas></div>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-card-title">Weekly Volume</div>
+        <div class="chart-card-sub">Bookings per week — last 8 weeks</div>
+        <div class="chart-wrap"><canvas id="weekChart" height="160"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-title">Status Breakdown</div>
+        <div class="chart-card-sub">Current status distribution</div>
+        <div class="chart-wrap"><canvas id="statusChart" height="160"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Services table -->
+    <div class="section-header">
+      <h2>Service <em>Performance</em></h2>
+    </div>
+
+    <div class="table-card">
+      <div class="table-card-header">
+        <h3>Revenue & Popularity <em>Breakdown</em></h3>
+      </div>
+      {% if svc_data %}
+      <table>
+        <thead>
+          <tr><th>#</th><th>Service</th><th>Bookings</th><th>Revenue Est.</th></tr>
+        </thead>
+        <tbody>
+          {% set max_cnt = svc_counts | max if svc_counts else 1 %}
+          {% for r in svc_data %}
+          {% set rank_class = 'gold' if loop.index == 1 else ('silver' if loop.index == 2 else ('bronze' if loop.index == 3 else '')) %}
+          {% set bar_w = [(r.cnt / max_cnt * 100), 6] | max %}
+          {% set booking_label = r.cnt ~ ' booking' ~ ('s' if r.cnt != 1 else '') %}
+          {% set rev_fmt = "{:,}".format(r.rev | int) %}
+          <tr>
+            <td class="rank {{ rank_class }}">{{ loop.index }}</td>
+            <td style="font-weight:600;color:var(--text-dark);">{{ r.name }}</td>
+            <td>
+              <div class="svc-bar-wrap">
+                <div class="svc-bar" data-w="{{ bar_w }}"></div>
+                <span class="svc-count">{{ booking_label }}</span>
+              </div>
+            </td>
+            <td class="svc-rev">₹{{ rev_fmt }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div style="text-align:center;padding:40px;color:var(--text-light);">No booking data yet.</div>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+
+<script id="analyticsData" type="application/json">
+{
+  "dayLabels":    {{ day_labels   | tojson }},
+  "dayCounts":    {{ day_counts   | tojson }},
+  "weekLabels":   {{ week_labels  | tojson }},
+  "weekCounts":   {{ week_counts  | tojson }},
+  "svcNames":     {{ svc_names    | tojson }},
+  "svcCounts":    {{ svc_counts   | tojson }},
+  "statusCounts": {
+    "pending":   {{ status_counts.pending }},
+    "confirmed": {{ status_counts.confirmed }},
+    "completed": {{ status_counts.completed }},
+    "cancelled": {{ status_counts.cancelled }}
+  }
+}
+</script>
+
+<script>
+  // ── Sidebar toggle ──
+  function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('sidebarOverlay').classList.toggle('open');
+    document.getElementById('menuBtn').classList.toggle('open');
+  }
+  function closeSidebar() {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebarOverlay').classList.remove('open');
+    document.getElementById('menuBtn').classList.remove('open');
+  }
+
+  // ── Read all chart data from JSON block (no Jinja in JS) ──
+  const ad = JSON.parse(document.getElementById('analyticsData').textContent);
+
+  // ── Apply dynamic bar widths (set via data-w to avoid VS Code HTML errors) ──
+  document.querySelectorAll('.svc-bar[data-w]').forEach(el => {
+    el.style.width = el.dataset.w + 'px';
+  });
+
+  // ── Chart defaults ──
+  Chart.defaults.font.family = "'Quicksand', sans-serif";
+  Chart.defaults.color = '#9c8aac';
+
+  const purple = '#8a63b4';
+  const purpleAlpha = (a) => 'rgba(138,99,180,' + a + ')';
+
+  // ── Day chart ──
+  new Chart(document.getElementById('dayChart'), {
+    type: 'bar',
+    data: {
+      labels: ad.dayLabels,
+      datasets: [{
+        label: 'Bookings',
+        data: ad.dayCounts,
+        backgroundColor: purpleAlpha(0.18),
+        borderColor: purple,
+        borderWidth: 2,
+        borderRadius: 6,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: 'rgba(138,99,180,0.07)' } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+
+  // ── Week chart ──
+  new Chart(document.getElementById('weekChart'), {
+    type: 'line',
+    data: {
+      labels: ad.weekLabels,
+      datasets: [{
+        label: 'Bookings',
+        data: ad.weekCounts,
+        borderColor: purple,
+        backgroundColor: purpleAlpha(0.08),
+        borderWidth: 2.5,
+        pointBackgroundColor: purple,
+        pointRadius: 4,
+        fill: true,
+        tension: 0.4,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: 'rgba(138,99,180,0.07)' } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+
+  // ── Service doughnut ──
+  new Chart(document.getElementById('svcChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ad.svcNames,
+      datasets: [{
+        data: ad.svcCounts,
+        backgroundColor: [
+          '#8a63b4','#4a2d6f','#b48fc8','#c9a96e','#6b3fa0',
+          '#dbb8f0','#e8c4a0','#7c52a0','#a87cc8','#9b59b6'
+        ],
+        borderWidth: 2,
+        borderColor: '#fff',
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      plugins: {
+        legend: { position: 'bottom', labels: { padding: 14, font: { size: 11 } } }
+      },
+      cutout: '62%',
+    }
+  });
+
+  // ── Status doughnut ──
+  new Chart(document.getElementById('statusChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Pending', 'Confirmed', 'Completed', 'Cancelled'],
+      datasets: [{
+        data: [
+          ad.statusCounts.pending,
+          ad.statusCounts.confirmed,
+          ad.statusCounts.completed,
+          ad.statusCounts.cancelled
+        ],
+        backgroundColor: ['#f59e0b', '#16a34a', '#2563eb', '#dc2626'],
+        borderWidth: 2,
+        borderColor: '#fff',
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      plugins: {
+        legend: { position: 'bottom', labels: { padding: 14, font: { size: 11 } } }
+      },
+      cutout: '62%',
+    }
+  });
+</script>
+</body>
+</html>
