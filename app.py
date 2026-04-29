@@ -1,6 +1,3 @@
-import pymysql
-pymysql.install_as_MySQLdb()
-
 import os
 from flask import Flask, render_template, redirect, url_for, request, flash, session
 from flask_wtf.csrf import CSRFProtect
@@ -12,11 +9,6 @@ from functools import wraps
 
 app = Flask(__name__)
 app.config.from_object(Config)
-
-# ── Admin credentials ──────────────────
-ADMIN_USERNAME = 'admin'
-ADMIN_PASSWORD = 'admin123'
-# ──────────────────────────────────────
 
 
 db.init_app(app)
@@ -834,4 +826,4 @@ if __name__ == '__main__':
     # Never run with debug=True in production — it exposes an interactive console.
     debug_mode = os.environ.get('FLASK_DEBUG', '0') == '1'
     port = int(os.environ.get('PORT', 5000))
-    app.run(debug=debug_mode, host='0.0.0.0', port=5000)
+    app.run(debug=debug_mode, host='0.0.0.0', port=port)
