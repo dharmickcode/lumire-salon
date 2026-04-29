@@ -826,4 +826,5 @@ if __name__ == '__main__':
     # Set FLASK_DEBUG=1 in your shell to enable debug mode during development.
     # Never run with debug=True in production — it exposes an interactive console.
     debug_mode = os.environ.get('FLASK_DEBUG', '0') == '1'
+    port = int(os.environ.get('PORT', 5000))
     app.run(debug=debug_mode, host='0.0.0.0', port=5000)
